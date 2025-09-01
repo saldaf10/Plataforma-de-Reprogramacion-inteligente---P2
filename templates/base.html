@@ -1,0 +1,74 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Ecommerce PRI{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary-blue: #01c9ff; --dark-blue: #0066cc; }
+        body { font-family: 'Inter', sans-serif; }
+        .navbar-brand { font-weight: 700; }
+        .btn-primary { background: var(--primary-blue); border: none; }
+        .btn-primary:hover { background: var(--dark-blue); }
+    </style>
+    {% block head %}{% endblock %}
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: var(--primary-blue)">
+      <div class="container">
+        <a class="navbar-brand" href="/">PRI Shop</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div id="nav" class="collapse navbar-collapse">
+          <ul class="navbar-nav me-auto">
+            {% if user.is_authenticated %}
+              {% if user.profile.role == 'cliente' %}
+                <li class="nav-item"><a class="nav-link" href="/shop/">Productos</a></li>
+                <li class="nav-item"><a class="nav-link" href="/cart/">Carrito</a></li>
+              {% endif %}
+            {% else %}
+              <li class="nav-item"><a class="nav-link" href="/shop/">Productos</a></li>
+              <li class="nav-item"><a class="nav-link" href="/cart/">Carrito</a></li>
+            {% endif %}
+            {% if user.is_authenticated %}
+              {% if user.is_superuser or user.profile.role == 'manager' %}
+                <li class="nav-item"><a class="nav-link" href="/orders/panel/">Panel</a></li>
+              {% elif user.profile.role == 'repartidor' %}
+                <li class="nav-item"><a class="nav-link" href="/orders/my-orders/">Historial de pedidos</a></li>
+              {% elif user.profile.role == 'cliente' %}
+                <li class="nav-item"><a class="nav-link" href="/orders/my-orders/">Mis pedidos</a></li>
+              {% endif %}
+            {% endif %}
+            {% if user.is_superuser %}
+              <li class="nav-item"><a class="nav-link" href="/accounts/manage-roles/">Gestionar roles</a></li>
+            {% endif %}
+          </ul>
+          <ul class="navbar-nav">
+            {% if user.is_authenticated %}
+              <li class="nav-item"><a class="nav-link" href="/accounts/profile/">Perfil</a></li>
+              <li class="nav-item"><a class="nav-link" href="/accounts/logout/">Salir</a></li>
+            {% else %}
+              <li class="nav-item"><a class="nav-link" href="/accounts/login/">Entrar</a></li>
+              <li class="nav-item"><a class="nav-link" href="/accounts/signup/">Crear cuenta</a></li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container py-4">
+      {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+  </body>
+  </html>
+
+

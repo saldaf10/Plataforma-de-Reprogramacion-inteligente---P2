@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Gestionar roles{% endblock %}
+{% block content %}
+<h3>Gestionar roles</h3>
+<div class="card card-body">
+  <form method="post" class="row g-2">{% csrf_token %}
+    <div class="col-md-5">
+      <label class="form-label">Usuario</label>
+      <select name="user_id" class="form-select">
+        {% for u in users %}
+        <option value="{{ u.id }}">{{ u.username }}{% if u.profile %} ({{ u.profile.role }}){% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-5">
+      <label class="form-label">Rol</label>
+      <select name="role" class="form-select">
+        {% for r in roles %}
+        <option value="{{ r }}">{{ r|capfirst }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2 d-grid align-items-end">
+      <button class="btn btn-primary">Actualizar</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Entrega #{{ order.id }}{% endblock %}
+{% block content %}
+<h3>Entrega — Pedido #{{ order.id }}</h3>
+<div class="row">
+  <div class="col-md-6">
+    <div class="card card-body mb-3">
+      <h6>Resumen del pedido</h6>
+      <p><strong>Cliente:</strong> {{ order.full_name }} ({{ order.email }})</p>
+      <p><strong>Dirección:</strong> {{ order.address }}, {{ order.city }}</p>
+      <p><strong>Total:</strong> ${{ order.total_amount }}</p>
+      <ul class="list-group list-group-flush">
+        {% for it in order.items.all %}
+        <li class="list-group-item d-flex justify-content-between"><span>{{ it.product.name }} x {{ it.quantity }}</span><strong>${{ it.get_line_total }}</strong></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card card-body">
+      <div class="mb-2">Estado actual: <span class="badge bg-secondary">{{ delivery.get_status_display }}</span></div>
+      <div class="mb-3">Programado: {% if delivery.scheduled_date %}{{ delivery.scheduled_date }}{% else %}-{% endif %} {% if delivery.scheduled_window %}({{ delivery.scheduled_window }}){% endif %}</div>
+      <form method="post" enctype="multipart/form-data" class="row g-2">{% csrf_token %}
+        <div class="col-12">
+          <div class="alert alert-info mb-2">Hora estimada: <strong>{{ delivery.estimated_datetime|date:"d/m/Y H:i" }}</strong></div>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Comentarios</label>
+          <textarea class="form-control" name="notes" rows="3" placeholder="Comentarios para el estado">{{ delivery.notes }}</textarea>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Foto</label>
+          {% if delivery.photo %}
+            <img class="img-fluid rounded mb-2" src="{{ delivery.photo.url }}" alt="Evidencia">
+          {% endif %}
+          <input type="file" class="form-control" name="photo" accept="image/*">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Actualizar estado</label>
+          <select class="form-select" name="action">
+            <option value="en_ruta" {% if delivery.status == 'en_ruta' %}selected{% endif %}>En ruta</option>
+            <option value="entregada" {% if delivery.status == 'entregada' %}selected{% endif %}>Entregada</option>
+            <option value="fallida" {% if delivery.status == 'fallida' %}selected{% endif %}>Fallida</option>
+            <option value="reprogramada" {% if delivery.status == 'reprogramada' %}selected{% endif %}>Reprogramada</option>
+          </select>
+        </div>
+        <div class="col-12 d-grid mt-2">
+          <button class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
