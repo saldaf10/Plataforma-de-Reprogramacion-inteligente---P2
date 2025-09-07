@@ -61,13 +61,13 @@ def order_summary(request, order_id: int):
 def my_orders(request):
     user = request.user
     if user.is_superuser:
-        orders = Order.objects.all().order_by("-created_at")
+        return redirect("orders:panel")
     elif hasattr(user, "profile") and user.profile.role == "repartidor":
         # Mostrar entregas asignadas al rider
         deliveries = Delivery.objects.select_related("order").filter(rider=user).order_by("-created_at")
         return render(request, "orders/rider_orders.html", {"deliveries": deliveries})
     elif hasattr(user, "profile") and user.profile.role == "manager":
-        orders = Order.objects.all().order_by("-created_at")
+        return redirect("orders:panel")
     else:
         orders = Order.objects.filter(user=user).order_by("-created_at")
         # Próximo pedido no entregado
