@@ -1,11 +1,11 @@
-# Casos de Prueba - Solo Funcionalidades Implementadas
-## Plataforma de Reprogramación Inteligente (PRI) - Django
+# Casos de Prueba - Plataforma de Reprogramación Inteligente (PRI)
+## Proyecto Django - E-commerce con Sistema de Entregas
 
 ---
 
-## ✅ **Funcionalidades Implementadas y Funcionando**
+## Funcionalidades Implementadas
 
-Basándome en tu README y código actual, estas son las funcionalidades que **SÍ están funcionando**:
+He desarrollado las siguientes funcionalidades principales en mi proyecto Django:
 
 ### 🔐 **Autenticación y Gestión de Usuarios**
 - Registro de usuarios
@@ -33,7 +33,9 @@ Basándome en tu README y código actual, estas son las funcionalidades que **S�
 
 ---
 
-## 📋 **Tabla de Casos de Prueba - Solo Funcionando**
+## Casos de Prueba Implementados
+
+A continuación presento los casos de prueba que he diseñado para validar el funcionamiento correcto de mi sistema:
 
 | ID | Descripción | Precondiciones | Pasos a Seguir | Resultado Esperado | Prioridad |
 |---|---|---|---|---|---|
@@ -91,39 +93,41 @@ Basándome en tu README y código actual, estas son las funcionalidades que **S�
 
 ---
 
-## 🎯 **Resumen por Funcionalidad**
+## Resumen de Casos de Prueba
 
-### ✅ **Funcionalidades Implementadas (42 casos de prueba)**
+He diseñado un total de **42 casos de prueba** que cubren todas las funcionalidades implementadas:
 
 | Módulo | Casos de Prueba | Estado |
 |--------|----------------|--------|
-| **Autenticación** | TC-001 a TC-005 | ✅ Funcionando |
-| **Catálogo** | TC-006 a TC-010 | ✅ Funcionando |
-| **Carrito** | TC-011 a TC-014 | ✅ Funcionando |
-| **Compras** | TC-015 a TC-018 | ✅ Funcionando |
-| **Órdenes** | TC-019 a TC-023 | ✅ Funcionando |
-| **Entregas** | TC-024 a TC-028 | ✅ Funcionando |
-| **Comentarios** | TC-029 a TC-032 | ✅ Funcionando |
-| **Acceso** | TC-033 a TC-036 | ✅ Funcionando |
-| **Adicionales** | TC-037 a TC-042 | ✅ Funcionando |
+| **Autenticación** | TC-001 a TC-005 | Implementado |
+| **Catálogo** | TC-006 a TC-010 | Implementado |
+| **Carrito** | TC-011 a TC-014 | Implementado |
+| **Compras** | TC-015 a TC-018 | Implementado |
+| **Órdenes** | TC-019 a TC-023 | Implementado |
+| **Entregas** | TC-024 a TC-028 | Implementado |
+| **Comentarios** | TC-029 a TC-032 | Implementado |
+| **Acceso** | TC-033 a TC-036 | Implementado |
+| **Adicionales** | TC-037 a TC-042 | Implementado |
 
 ---
 
-## 🚫 **Funcionalidades NO Implementadas (Según Issues de GitHub)**
+## Funcionalidades Pendientes
 
-### ❌ **No están funcionando aún:**
-- **Notificaciones SMS/WhatsApp** (Issues #1, #2, #5)
-- **Notificaciones push en app** (Issues #3, #4)
-- **Dashboard con gráficos avanzados** (Issues #15, #16, #17, #18, #19)
-- **Filtros geográficos** (Issue #18)
-- **Descarga de reportes Excel/PDF** (Issue #16)
-- **NPS y métricas avanzadas** (Issue #15)
+Para futuras versiones del proyecto, tengo planificado implementar:
+
+- **Notificaciones SMS/WhatsApp** para informar sobre entregas
+- **Notificaciones push** en tiempo real
+- **Dashboard con gráficos avanzados** y métricas detalladas
+- **Filtros geográficos** para reportes
+- **Descarga de reportes** en Excel/PDF
+- **Métricas de satisfacción** (NPS)
 
 ---
 
-## 📋 **Datos de Prueba Necesarios**
+## Configuración para Ejecutar las Pruebas
 
-### 🗄️ **Configuración Inicial**
+Para poder ejecutar estos casos de prueba, necesitas configurar el entorno de la siguiente manera:
+
 ```bash
 # 1. Crear entorno virtual
 python -m venv .venv
@@ -143,9 +147,9 @@ python manage.py seed_store
 python manage.py createsuperuser
 ```
 
-### 👥 **Usuarios de Prueba**
+### Usuarios de Prueba
 ```python
-# Crear usuarios con diferentes roles
+# Crear usuarios con diferentes roles para las pruebas
 python manage.py shell
 >>> from django.contrib.auth.models import User
 >>> from accounts.models import UserProfile
@@ -165,35 +169,37 @@ UserProfile.objects.create(user=manager, role='manager')
 
 ---
 
-## 🎯 **Prioridades de Ejecución**
+## Prioridades de Ejecución
 
-### 🔴 **Alta Prioridad (Crítico)**
+He clasificado los casos de prueba por prioridad para facilitar la ejecución:
+
+### Alta Prioridad (Crítico)
 - TC-001, TC-002, TC-006, TC-011, TC-015, TC-016, TC-019, TC-024, TC-025, TC-026, TC-033, TC-037
 
-### 🟡 **Media Prioridad (Importante)**
+### Media Prioridad (Importante)
 - TC-003, TC-004, TC-007, TC-008, TC-012, TC-017, TC-020, TC-021, TC-027, TC-029, TC-034, TC-038
 
-### 🟢 **Baja Prioridad (Complementario)**
+### Baja Prioridad (Complementario)
 - TC-005, TC-009, TC-010, TC-013, TC-014, TC-018, TC-022, TC-023, TC-028, TC-030, TC-031, TC-032, TC-035, TC-036, TC-039, TC-040, TC-041, TC-042
 
 ---
 
-## ✅ **Checklist de Ejecución**
+## Checklist de Ejecución
 
-### **Preparación**
+### Preparación
 - [ ] Entorno virtual activado
 - [ ] Dependencias instaladas
 - [ ] Base de datos migrada
 - [ ] Datos de prueba creados
 - [ ] Usuarios de prueba creados
 
-### **Ejecución**
+### Ejecución
 - [ ] Ejecutar casos de alta prioridad
 - [ ] Documentar resultados (Pasó/Falló)
 - [ ] Capturar evidencias (screenshots)
 - [ ] Reportar bugs encontrados
 
-### **Validación**
+### Validación
 - [ ] Verificar que casos críticos pasan
 - [ ] Confirmar funcionalidades básicas
 - [ ] Validar control de acceso
@@ -201,12 +207,12 @@ UserProfile.objects.create(user=manager, role='manager')
 
 ---
 
-## 📝 **Notas Importantes**
+## Notas Importantes
 
-1. **Solo funcionalidades implementadas**: Estos casos cubren únicamente lo que está funcionando en tu código actual
-2. **Basado en tu README**: Toda la funcionalidad documentada en tu README.md está cubierta
+1. **Cobertura completa**: Estos casos cubren todas las funcionalidades implementadas en mi proyecto
+2. **Basado en mi código**: Toda la funcionalidad documentada en mi README.md está cubierta
 3. **Roles implementados**: Cliente, Repartidor, Manager/Superuser
 4. **Estados de entrega**: Pendiente → Asignada → En ruta → Entregada/Fallida/Reprogramada
 5. **Archivos de prueba**: Imágenes en `/media/products/` y `/media/deliveries/`
 
-**Total: 42 casos de prueba para funcionalidades que SÍ están implementadas y funcionando** ✅
+**Total: 42 casos de prueba diseñados para validar el funcionamiento correcto del sistema** ✅
