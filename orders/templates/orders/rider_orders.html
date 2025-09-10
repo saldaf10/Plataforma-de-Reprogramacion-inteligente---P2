@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Mis entregas asignadas{% endblock %}
+{% block content %}
+<h3>Mis entregas asignadas</h3>
+
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Cliente</th>
+        <th>Dirección</th>
+        <th>Programado</th>
+        <th>Hora estimada</th>
+        <th>Estado</th>
+        <th>Total</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in deliveries %}
+      <tr>
+        <td><a href="{% url 'orders:delivery_detail' d.order.id %}">#{{ d.order.id }}</a></td>
+        <td>{{ d.order.full_name }}<br><small class="text-muted">{{ d.order.email }}</small></td>
+        <td>{{ d.order.address }}, {{ d.order.city }}</td>
+        <td>
+          {% if d.scheduled_date %}{{ d.scheduled_date }}{% endif %}
+          {% if d.scheduled_window %}<br><small class="text-muted">{{ d.scheduled_window }}</small>{% endif %}
+        </td>
+        <td>{{ d.estimated_datetime|date:"d/m/Y H:i" }}</td>
+        <td><span class="badge {% if d.status == 'asignada' %}bg-secondary{% elif d.status == 'en_ruta' %}bg-primary{% elif d.status == 'entregada' %}bg-success{% elif d.status == 'fallida' %}bg-danger{% else %}bg-secondary{% endif %}">{{ d.get_status_display }}</span></td>
+        <td>${{ d.order.total_amount }}</td>
+        <td><a class="btn btn-sm btn-outline-primary" href="{% url 'orders:delivery_detail' d.order.id %}">Detalles</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7">No tienes entregas asignadas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+</div>
+{% endblock %}
+

@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Pago fallido - PRI Shop{% endblock %}
+{% block content %}
+<div class="alert alert-danger">
+  El pago no se pudo completar. Intenta nuevamente.
+  <div class="mt-2">
+    <a class="btn btn-outline-secondary" href="/orders/checkout/">Volver al checkout</a>
+  </div>
+</div>
+{% endblock %}
+

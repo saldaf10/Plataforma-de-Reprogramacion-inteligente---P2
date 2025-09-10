@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis pedidos - PRI Shop{% endblock %}
+{% block content %}
+<h3>Mis pedidos</h3>
+{% if next_delivery %}
+<div class="card card-body mb-3">
+  <h6 class="mb-1">Tu próximo pedido</h6>
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <div class="fw-bold">
+        {% with products=next_delivery.order.items.all %}
+          {% for it in products %}
+            {% if forloop.first %}
+              {{ it.product.name }}{% with n=products|length %}{% if n > 1 %} +{{ n|add:"-1" }} más{% endif %}{% endwith %}
+            {% endif %}
+          {% endfor %}
+        {% endwith %}
+      </div>
+      <small class="text-muted">Programado: {% if next_delivery.scheduled_date %}{{ next_delivery.scheduled_date }}{% else %}{{ next_delivery.estimated_datetime|date:"d/m/Y" }}{% endif %}
+        {% if next_delivery.scheduled_window %} ({{ next_delivery.scheduled_window }}){% endif %}
+      </small>
+      <div class="mt-1"><span class="badge {% if next_delivery.status == 'asignada' %}bg-secondary{% elif next_delivery.status == 'en_ruta' %}bg-primary{% elif next_delivery.status == 'entregada' %}bg-success{% elif next_delivery.status == 'fallida' %}bg-danger{% else %}bg-secondary{% endif %}">{{ next_delivery.get_status_display }}</span></div>
+    </div>
+    <a class="btn btn-outline-primary" href="{% url 'orders:delivery_detail' next_delivery.order.id %}">Ver detalle</a>
+  </div>
+  <div class="mt-3">
+    <div class="progress" style="height: 10px;">
+      <div class="progress-bar" role="progressbar" style="width: {% if next_delivery.status == 'pendiente' %}10{% elif next_delivery.status == 'asignada' %}30{% elif next_delivery.status == 'en_ruta' %}60{% elif next_delivery.status == 'reprogramada' %}50{% elif next_delivery.status == 'entregada' %}100{% else %}0{% endif %}%"></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+<div class="list-group">
+  {% for o in orders %}
+  <a class="list-group-item list-group-item-action" href="{% url 'orders:delivery_detail' o.id %}">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <div class="fw-bold">
+          {% with products=o.items.all %}
+            {% for it in products %}
+              {% if forloop.first %}
+                {{ it.product.name }}{% with n=products|length %}{% if n > 1 %} +{{ n|add:"-1" }} más{% endif %}{% endwith %}
+              {% endif %}
+            {% endfor %}
+          {% endwith %}
+        </div>
+        <small class="text-muted">{{ o.created_at|date:"d/m/Y H:i" }}</small>
+      </div>
+      <div class="text-end">
+        {% if o.delivery %}
+          <span class="badge {% if o.delivery.status == 'asignada' %}bg-secondary{% elif o.delivery.status == 'en_ruta' %}bg-primary{% elif o.delivery.status == 'entregada' %}bg-success{% elif o.delivery.status == 'fallida' %}bg-danger{% else %}bg-secondary{% endif %}">{{ o.delivery.get_status_display }}</span>
+        {% else %}
+          <span class="badge bg-warning text-dark">Sin entrega</span>
+        {% endif %}
+        <div class="fw-bold mt-1">${{ o.total_amount }}</div>
+      </div>
+    </div>
+  </a>
+  {% empty %}
+  <p>No tienes pedidos aún.</p>
+  {% endfor %}
+</div>
+{% endblock %}
+

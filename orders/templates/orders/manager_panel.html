@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Panel{% endblock %}
+{% block content %}
+<h3>Panel</h3>
+
+<div class="row mb-3">
+  <div class="col-md-3"><div class="card card-body text-center"><div class="h2">{{ total }}</div><div>Total pedidos</div></div></div>
+  <div class="col-md-3"><div class="card card-body text-center"><div class="h2">{{ delivered }}</div><div>Entregadas</div></div></div>
+  <div class="col-md-3"><div class="card card-body text-center"><div class="h2">{{ pending }}</div><div>En proceso</div></div></div>
+  <div class="col-md-3"><div class="card card-body text-center"><div class="h2">{{ failed }}</div><div>Fallidas</div></div></div>
+  
+</div>
+
+<div class="card card-body mb-3">
+  <form method="get" class="row g-2">
+    <div class="col-md-4">
+      <input class="form-control" name="q" value="{{ q }}" placeholder="Buscar: nombre, dirección, email, #pedido">
+    </div>
+    <div class="col-md-3">
+      <select class="form-select" name="status">
+        <option value="">Todos los estados</option>
+        <option value="pendiente" {% if status == 'pendiente' %}selected{% endif %}>Pendiente</option>
+        <option value="asignada" {% if status == 'asignada' %}selected{% endif %}>Asignada</option>
+        <option value="en_ruta" {% if status == 'en_ruta' %}selected{% endif %}>En ruta</option>
+        <option value="reprogramada" {% if status == 'reprogramada' %}selected{% endif %}>Reprogramada</option>
+        <option value="entregada" {% if status == 'entregada' %}selected{% endif %}>Entregada</option>
+        <option value="fallida" {% if status == 'fallida' %}selected{% endif %}>Fallida</option>
+      </select>
+    </div>
+    <div class="col-md-2 d-grid">
+      <button class="btn btn-primary">Aplicar</button>
+    </div>
+  </form>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Cliente</th>
+        <th>Dirección</th>
+        <th>Ciudad</th>
+        <th>Estado</th>
+        <th>Rider</th>
+        <th>Fecha</th>
+        <th>Total</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in orders %}
+      <tr>
+        <td>{{ o.id }}</td>
+        <td>{{ o.full_name }}<br><small class="text-muted">{{ o.email }}</small></td>
+        <td>{{ o.address }}</td>
+        <td>{{ o.city }}</td>
+        <td>
+          {% if o.delivery %}
+          <span class="badge bg-secondary">{{ o.delivery.get_status_display }}</span>
+          {% else %}
+          <span class="badge bg-warning text-dark">Sin entrega</span>
+          {% endif %}
+        </td>
+        <td>{% if o.delivery and o.delivery.rider %}{{ o.delivery.rider.username }}{% else %}-{% endif %}</td>
+        <td>{{ o.created_at|date:"d/m/Y H:i" }}</td>
+        <td>${{ o.total_amount }}</td>
+        <td>
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'orders:delivery_detail' o.id %}">Gestionar</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9">No hay pedidos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+

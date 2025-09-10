@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Perfil - PRI Shop{% endblock %}
+{% block content %}
+<div class="card card-body">
+  <h4>Perfil</h4>
+  <p>Usuario: <strong>{{ request.user.username }}</strong></p>
+  <p>Email: <strong>{{ request.user.email }}</strong></p>
+  <a class="btn btn-outline-secondary" href="/orders/my-orders/">Ver mis pedidos</a>
+{% endblock %}
+
