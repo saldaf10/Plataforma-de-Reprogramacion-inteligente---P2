@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from catalog.models import Product
 from .models import Order, OrderItem, Delivery, DeliveryEvent, DeliveryComment
 
@@ -188,11 +188,11 @@ def manager_panel(request):
         orders_qs = orders_qs.filter(delivery__status=status)
     if q:
         orders_qs = orders_qs.filter(
-            models.Q(full_name__icontains=q)
-            | models.Q(address__icontains=q)
-            | models.Q(city__icontains=q)
-            | models.Q(email__icontains=q)
-            | models.Q(id__icontains=q)
+            Q(full_name__icontains=q)
+            | Q(address__icontains=q)
+            | Q(city__icontains=q)
+            | Q(email__icontains=q)
+            | Q(id__icontains=q)
         )
 
     total = orders_qs.count()
@@ -216,6 +216,3 @@ def manager_panel(request):
             "q": q,
         },
     )
-from django.shortcuts import render
-
-# Create your views here.
