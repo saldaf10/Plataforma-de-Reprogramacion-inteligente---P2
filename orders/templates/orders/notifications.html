@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Mis Notificaciones{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>📱 Mis Notificaciones</h3>
+    <a href="{% url 'orders:my_orders' %}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> Volver a Pedidos
+    </a>
+</div>
+
+{% if notifications %}
+    <div class="row">
+        {% for notification in notifications %}
+        <div class="col-12 mb-3">
+            <div class="card {% if not notification.read %}border-primary{% else %}border-light{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                {% if notification.notification_type == "approaching" %}
+                                    <span class="badge bg-primary me-2">🚚 Aproximándose</span>
+                                {% elif notification.notification_type == "leaving" %}
+                                    <span class="badge bg-success me-2">🚀 Saliendo</span>
+                                {% elif notification.notification_type == "arriving_soon" %}
+                                    <span class="badge bg-warning me-2">⏰ Llegando pronto</span>
+                                {% elif notification.notification_type == "arrived" %}
+                                    <span class="badge bg-info me-2">🏠 Ha llegado</span>
+                                {% elif notification.notification_type == "delivered" %}
+                                    <span class="badge bg-success me-2">✅ Entregado</span>
+                                {% endif %}
+                                
+                                <small class="text-muted">
+                                    {{ notification.sent_at|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                            
+                            <p class="mb-2 {% if not notification.read %}fw-bold{% endif %}">
+                                {{ notification.message }}
+                            </p>
+                            
+                            <div class="d-flex align-items-center">
+                                <a href="{% url 'orders:delivery_detail' notification.delivery.order.id %}" 
+                                   class="btn btn-sm btn-outline-primary me-2">
+                                    Ver Detalle del Pedido
+                                </a>
+                                
+                                {% if not notification.read %}
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        Marcar como leída
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if not notification.read %}
+                        <div class="ms-3">
+                            <span class="badge bg-primary rounded-pill">Nuevo</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="Paginación de notificaciones">
+            <ul class="pagination">
+                <li class="page-item disabled">
+                    <span class="page-link">Mostrando las últimas 20 notificaciones</span>
+                </li>
+            </ul>
+        </nav>
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="bi bi-bell-slash" style="font-size: 4rem; color: #6c757d;"></i>
+        </div>
+        <h4 class="text-muted">No tienes notificaciones</h4>
+        <p class="text-muted">Cuando tengas pedidos en camino, recibirás notificaciones aquí.</p>
+        <a href="{% url 'catalog:product_list' %}" class="btn btn-primary">
+            <i class="bi bi-cart"></i> Ir de Compras
+        </a>
+    </div>
+{% endif %}
+
+{% endblock %}

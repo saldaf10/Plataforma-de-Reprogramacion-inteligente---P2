@@ -6,6 +6,7 @@
   <div class="col-md-6">
     <div class="card card-body mb-3">
       <h6>Estado actual: <span class="badge bg-secondary">{{ delivery.get_status_display }}</span></h6>
+      {% if is_modifiable %}
       <form method="post" class="mt-3">{% csrf_token %}
         <input type="hidden" name="action" value="assign">
         <div class="mb-2">
@@ -31,6 +32,12 @@
           <button class="btn btn-primary">Actualizar asignación</button>
         </div>
       </form>
+      {% else %}
+      <div class="alert alert-warning mt-3">
+        <h6><i class="bi bi-lock"></i> Pedido Bloqueado</h6>
+        <p class="mb-0">Este pedido no puede ser modificado porque está en estado final ({{ delivery.get_status_display }}).</p>
+      </div>
+      {% endif %}
     </div>
   </div>
   <div class="col-md-6">
@@ -78,7 +85,9 @@
               <td>{{ e.notes|default:"-" }}</td>
               <td>
                 {% if e.photo %}
-                  <img src="{{ e.photo.url }}" alt="foto" style="height:40px;" class="rounded">
+                  <img src="{{ e.photo.url }}" alt="foto" style="height:40px;" class="rounded cursor-pointer" 
+                       data-bs-toggle="modal" data-bs-target="#imageModal" 
+                       onclick="showImageModal('{{ e.photo.url }}', 'Evento del {{ e.created_at|date:"d/m/Y H:i" }}')">
                 {% else %}-{% endif %}
               </td>
             </tr>
@@ -96,6 +105,7 @@
   <div class="col-12">
     <div class="card card-body">
       <h6>Comentarios</h6>
+      {% if is_modifiable %}
       <form method="post" enctype="multipart/form-data" class="row g-2 mb-3">{% csrf_token %}
         <input type="hidden" name="action" value="manager_comment">
         <div class="col-md-8">
@@ -108,6 +118,11 @@
           <button class="btn btn-primary">Añadir</button>
         </div>
       </form>
+      {% else %}
+      <div class="alert alert-info mb-3">
+        <i class="bi bi-info-circle"></i> Los comentarios están deshabilitados para pedidos en estado final.
+      </div>
+      {% endif %}
       <ul class="list-group list-group-flush">
         {% for c in comments %}
         <li class="list-group-item">
@@ -118,7 +133,11 @@
             </div>
           </div>
           <div class="mt-1">{{ c.message }}</div>
-          {% if c.photo %}<img src="{{ c.photo.url }}" class="rounded mt-2" style="max-height:100px;">{% endif %}
+          {% if c.photo %}
+            <img src="{{ c.photo.url }}" class="rounded mt-2 cursor-pointer" style="max-height:100px;" 
+                 data-bs-toggle="modal" data-bs-target="#imageModal" 
+                 onclick="showImageModal('{{ c.photo.url }}', 'Comentario del {{ c.created_at|date:"d/m/Y H:i" }}')">
+          {% endif %}
         </li>
         {% empty %}
         <li class="list-group-item">Sin comentarios.</li>
@@ -127,5 +146,48 @@
     </div>
   </div>
 </div>
+
+<!-- Modal para ampliar imágenes -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="imageModalLabel">Imagen de Evidencia</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="modalImage" src="" alt="Imagen ampliada" class="img-fluid rounded" style="max-height: 70vh;">
+        <div class="mt-3">
+          <small id="modalImageInfo" class="text-muted"></small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <a id="downloadImage" href="#" class="btn btn-primary" download>
+          <i class="bi bi-download"></i> Descargar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.cursor-pointer {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.cursor-pointer:hover {
+  opacity: 0.8;
+}
+</style>
+
+<script>
+function showImageModal(imageUrl, imageInfo) {
+  document.getElementById('modalImage').src = imageUrl;
+  document.getElementById('modalImageInfo').textContent = imageInfo;
+  document.getElementById('downloadImage').href = imageUrl;
+}
+</script>
 {% endblock %}
 

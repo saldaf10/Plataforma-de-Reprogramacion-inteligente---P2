@@ -43,6 +43,7 @@
                 <li class="nav-item"><a class="nav-link" href="/orders/my-orders/">Historial de pedidos</a></li>
               {% elif user.profile.role == 'cliente' %}
                 <li class="nav-item"><a class="nav-link" href="/orders/my-orders/">Mis pedidos</a></li>
+                <li class="nav-item"><a class="nav-link" href="/orders/notifications/">📱 Notificaciones</a></li>
               {% endif %}
             {% endif %}
             {% if user.is_superuser %}

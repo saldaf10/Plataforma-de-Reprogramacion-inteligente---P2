@@ -60,6 +60,16 @@ class Delivery(models.Model):
         from datetime import timedelta
         # Estimado: 24 horas después de la creación del pedido
         return self.order.created_at + timedelta(days=1)
+    
+    @property
+    def is_final_state(self):
+        """Verifica si el pedido está en un estado final (no modificable)"""
+        return self.status in ['entregada', 'fallida']
+    
+    @property
+    def is_modifiable(self):
+        """Verifica si el pedido puede ser modificado"""
+        return not self.is_final_state
 
 
 class DeliveryEvent(models.Model):
@@ -96,6 +106,26 @@ class DeliveryComment(models.Model):
 
     def __str__(self) -> str:
         return f"Comment by {self.user_id or 'n/a'} on Delivery {self.delivery_id}"
-from django.db import models
 
-# Create your models here.
+
+class DeliveryNotification(models.Model):
+    NOTIFICATION_TYPES = (
+        ("approaching", "Aproximándose"),
+        ("leaving", "Saliendo"),
+        ("arriving_soon", "Llegando pronto (3 min)"),
+        ("arrived", "Ha llegado"),
+        ("delivered", "Entregado"),
+    )
+    
+    delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE, related_name="notifications")
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="delivery_notifications")
+    message = models.TextField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+    read = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ["-sent_at"]
+    
+    def __str__(self) -> str:
+        return f"Notification {self.get_notification_type_display()} for {self.recipient.username}"

@@ -31,11 +31,19 @@ Proyecto Django que implementa un ecommerce básico (zapatos, lociones, proteín
 
 ## Instalación y ejecución
 
-1. Clonar repo y entrar a `server/`:
+1. Clonar repo y entrar al directorio del proyecto:
    ```bash
-   cd "./server"
+   cd "Plataforma-de-Reprogramacion-inteligente---P2"
    ```
 2. Crear y activar entorno virtual:
+   
+   **Para Windows:**
+   ```cmd
+   python -m venv .venv
+   .venv\Scripts\activate
+   ```
+   
+   **Para Linux/Mac:**
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate

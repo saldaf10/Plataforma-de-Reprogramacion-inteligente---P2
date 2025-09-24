@@ -15,3 +15,15 @@ def status_badge(status: str) -> str:
     return mapping.get(status, "bg-secondary")
 
 
+@register.filter
+def is_final_state(status):
+    """Verifica si el estado es final (no modificable)"""
+    return status in ['entregada', 'fallida']
+
+
+@register.filter
+def is_modifiable(status):
+    """Verifica si el estado permite modificaciones"""
+    return status not in ['entregada', 'fallida']
+
+

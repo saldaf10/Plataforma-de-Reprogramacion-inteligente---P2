@@ -2,8 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Count, Q
+from django.contrib import messages
 from catalog.models import Product
 from .models import Order, OrderItem, Delivery, DeliveryEvent, DeliveryComment
+from .notification_service import DeliveryNotificationService
 
 
 @login_required
@@ -103,6 +105,11 @@ def delivery_detail(request, order_id: int):
             return redirect("orders:my_orders")
 
     if request.method == "POST":
+        # Verificar si el pedido está en estado final
+        if delivery.is_final_state:
+            messages.error(request, "Este pedido no puede ser modificado porque está en estado final (entregado o fallido).")
+            return redirect("orders:delivery_detail", order_id=order.id)
+        
         # Actualizaciones dependiendo del rol
         action = request.POST.get("action")
         if user_role == "manager":
@@ -151,12 +158,42 @@ def delivery_detail(request, order_id: int):
                     notes=delivery.notes,
                     photo=delivery.photo if photo_file else None,
                 )
+            # Manejar notificaciones del repartidor
+            elif action == "send_notification":
+                # Validar que el pedido esté en un estado válido para notificaciones
+                if not delivery.is_modifiable or delivery.status not in ['en_ruta', 'reprogramada']:
+                    messages.error(request, "Las notificaciones solo se pueden enviar para pedidos activos en ruta o reprogramados.")
+                else:
+                    notification_type = request.POST.get("notification_type")
+                    estimated_minutes = request.POST.get("estimated_minutes", "")
+                    
+                    if notification_type == "approaching":
+                        minutes = int(estimated_minutes) if estimated_minutes.isdigit() else 30
+                        DeliveryNotificationService.send_approaching_notification(delivery, minutes)
+                        messages.success(request, f"Notificación enviada: El cliente será notificado que llegas en aproximadamente {minutes} minutos.")
+                    elif notification_type == "leaving":
+                        DeliveryNotificationService.send_leaving_notification(delivery)
+                        messages.success(request, "Notificación enviada: El cliente fue notificado que ya saliste con su pedido.")
+                    elif notification_type == "arriving_soon":
+                        DeliveryNotificationService.send_arriving_soon_notification(delivery)
+                        messages.success(request, "Notificación enviada: El cliente fue notificado que llegarás en 3 minutos.")
+                    elif notification_type == "arrived":
+                        DeliveryNotificationService.send_arrived_notification(delivery)
+                        messages.success(request, "Notificación enviada: El cliente fue notificado que ya llegaste.")
+                    elif notification_type == "delivered":
+                        DeliveryNotificationService.send_delivered_notification(delivery)
+                        messages.success(request, "Notificación enviada: El cliente fue notificado que su pedido fue entregado.")
         # Cliente no actualiza estado aquí
 
         return redirect("orders:delivery_detail", order_id=order.id)
 
     # Render por rol
-    context = {"order": order, "delivery": delivery}
+    context = {
+        "order": order, 
+        "delivery": delivery,
+        "is_modifiable": delivery.is_modifiable,
+        "is_final_state": delivery.is_final_state
+    }
     if user_role == "manager":
         from django.contrib.auth.models import User
         riders = User.objects.filter(profile__role="repartidor")
@@ -167,6 +204,7 @@ def delivery_detail(request, order_id: int):
     if user_role == "repartidor":
         context["events"] = delivery.events.all()
         context["comments"] = delivery.comments.all()
+        context["can_send_notifications"] = DeliveryNotificationService.can_send_notifications(delivery)
         return render(request, "orders/delivery_rider.html", context)
     # Cliente
     context["events"] = delivery.events.all()
@@ -216,3 +254,29 @@ def manager_panel(request):
             "q": q,
         },
     )
+
+
+@login_required
+def notifications(request):
+    """Vista para mostrar las notificaciones del usuario"""
+    notifications = DeliveryNotificationService.get_user_notifications(request.user, limit=20)
+    
+    # Marcar notificaciones como leídas si se especifica
+    if request.method == "POST":
+        notification_id = request.POST.get("notification_id")
+        if notification_id:
+            try:
+                notification = DeliveryNotification.objects.get(
+                    id=notification_id, 
+                    recipient=request.user
+                )
+                DeliveryNotificationService.mark_as_read(notification)
+                messages.success(request, "Notificación marcada como leída.")
+            except DeliveryNotification.DoesNotExist:
+                messages.error(request, "Notificación no encontrada.")
+        
+        return redirect("orders:notifications")
+    
+    return render(request, "orders/notifications.html", {
+        "notifications": notifications
+    })
