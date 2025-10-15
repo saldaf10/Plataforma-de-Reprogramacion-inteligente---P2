@@ -1,179 +1,463 @@
 {% extends 'base.html' %}
-{% block title %}Entrega #{{ order.id }}{% endblock %}
+{% block title %}Entrega #{{ order.id }} - PRI{% endblock %}
+
 {% block content %}
-<h3>Entrega — Pedido #{{ order.id }}</h3>
-<div class="row">
-  <div class="col-md-6">
-    <div class="card card-body mb-3">
-      <h6>Resumen del pedido</h6>
-      <p><strong>Cliente:</strong> {{ order.full_name }} ({{ order.email }})</p>
-      <p><strong>Dirección:</strong> {{ order.address }}, {{ order.city }}</p>
-      <p><strong>Total:</strong> ${{ order.total_amount }}</p>
-      <ul class="list-group list-group-flush">
-        {% for it in order.items.all %}
-        <li class="list-group-item d-flex justify-content-between"><span>{{ it.product.name }} x {{ it.quantity }}</span><strong>${{ it.get_line_total }}</strong></li>
-        {% endfor %}
-      </ul>
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="card card-body">
-      <div class="mb-2">Estado actual: <span class="badge bg-secondary">{{ delivery.get_status_display }}</span></div>
-      <div class="mb-3">Programado: {% if delivery.scheduled_date %}{{ delivery.scheduled_date }}{% else %}-{% endif %} {% if delivery.scheduled_window %}({{ delivery.scheduled_window }}){% endif %}</div>
-      <div class="col-12">
-        <div class="alert alert-info mb-2">Hora estimada: <strong>{{ delivery.estimated_datetime|date:"d/m/Y H:i" }}</strong></div>
+<h2 class="mb-4">
+  <span class="text-gradient">
+    <i class="bi bi-truck"></i> Entrega — Pedido #{{ order.id }}
+  </span>
+</h2>
+
+<div class="row g-4">
+  <!-- Información del Cliente y Pedido -->
+  <div class="col-lg-6">
+    <div class="modern-card mb-4">
+      <div class="modern-card-header">
+        <h4 class="mb-0" style="color: var(--text-primary);">
+          <i class="bi bi-person-circle"></i> Información del Cliente
+        </h4>
       </div>
       
-      <!-- Botones de notificación - Solo para pedidos activos -->
-      {% if can_send_notifications and is_modifiable %}
-      <div class="col-12 mb-3">
-        <h6 class="text-primary">📱 Notificar al Cliente</h6>
-        <div class="btn-group-vertical w-100" role="group">
-          <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#approachingModal">
-            🚚 Aproximándose
-          </button>
-          <button type="button" class="btn btn-outline-success btn-sm" onclick="sendNotification('leaving')">
-            🚀 Saliendo
-          </button>
-          <button type="button" class="btn btn-outline-warning btn-sm" onclick="sendNotification('arriving_soon')">
-            ⏰ Llegando pronto (3 min)
-          </button>
-          <button type="button" class="btn btn-outline-info btn-sm" onclick="sendNotification('arrived')">
-            🏠 He llegado
-          </button>
-          <button type="button" class="btn btn-outline-success btn-sm" onclick="sendNotification('delivered')">
-            ✅ Entregado
-          </button>
+      <div class="modern-card-body">
+        <div class="mb-3">
+          <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+            <i class="bi bi-person"></i> Cliente
+          </div>
+          <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">{{ order.full_name }}</div>
+          <div style="color: var(--text-secondary); font-size: 0.95rem;">
+            <i class="bi bi-envelope"></i> {{ order.email }}
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+            <i class="bi bi-geo-alt"></i> Dirección de Entrega
+          </div>
+          <div style="font-weight: 600; color: var(--text-primary); font-size: 1rem;">
+            {{ order.address }}
+          </div>
+          <div style="color: var(--text-secondary);">
+            {{ order.city }}, {{ order.postal_code }}
+          </div>
+        </div>
+        
+        <div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+            <i class="bi bi-cash-coin"></i> Monto Total
+          </div>
+          <div style="font-size: 2rem; font-weight: 900; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            ${{ order.total_amount }}
+          </div>
         </div>
       </div>
-      {% else %}
-      <div class="col-12 mb-3">
-        <div class="alert alert-secondary">
-          <i class="bi bi-info-circle"></i> Las notificaciones al cliente solo están disponibles para pedidos en ruta o reprogramados.
-        </div>
+    </div>
+    
+    <!-- Productos del Pedido -->
+    <div class="modern-card">
+      <div class="modern-card-header">
+        <h4 class="mb-0" style="color: var(--text-primary);">
+          <i class="bi bi-bag-check"></i> Productos
+        </h4>
       </div>
-      {% endif %}
-
-      {% if is_modifiable %}
-      <form method="post" enctype="multipart/form-data" class="row g-2" id="deliveryForm">{% csrf_token %}
-        <div class="col-12">
-          <label class="form-label">Comentarios</label>
-          <textarea class="form-control" name="notes" rows="3" placeholder="Comentarios para el estado">{{ delivery.notes }}</textarea>
+      
+      <div class="modern-card-body" style="padding: 0;">
+        {% for it in order.items.all %}
+        <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+          <div style="flex-grow: 1;">
+            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">{{ it.product.name }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">Cantidad: {{ it.quantity }}</div>
+          </div>
+          <div style="font-weight: 700; color: var(--pri-blue); font-size: 1.1rem;">
+            ${{ it.get_line_total }}
+          </div>
         </div>
-        <div class="col-12">
-          <label class="form-label">Foto</label>
-          {% if delivery.photo %}
-            <img class="img-fluid rounded mb-2 cursor-pointer" src="{{ delivery.photo.url }}" alt="Evidencia"
-                 data-bs-toggle="modal" data-bs-target="#imageModal" 
-                 onclick="showImageModal('{{ delivery.photo.url }}', 'Evidencia de entrega')">
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Estado y Acciones -->
+  <div class="col-lg-6">
+    <div class="modern-card mb-4">
+      <div class="modern-card-header">
+        <h4 class="mb-0" style="color: var(--text-primary);">
+          <i class="bi bi-info-circle"></i> Estado de la Entrega
+        </h4>
+      </div>
+      
+      <div class="modern-card-body">
+        <!-- Estado Actual -->
+        <div class="mb-3">
+          <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+            Estado Actual
+          </div>
+          {% if delivery.status == 'entregada' %}
+            <span class="modern-badge badge-success" style="font-size: 1rem; padding: 0.5rem 1rem;">
+              <i class="bi bi-check-circle"></i> {{ delivery.get_status_display }}
+            </span>
+          {% elif delivery.status == 'fallida' %}
+            <span class="modern-badge badge-danger" style="font-size: 1rem; padding: 0.5rem 1rem;">
+              <i class="bi bi-x-circle"></i> {{ delivery.get_status_display }}
+            </span>
+          {% elif delivery.status == 'en_ruta' %}
+            <span class="modern-badge" style="background: #01c9ff; color: white; font-size: 1rem; padding: 0.5rem 1rem;">
+              <i class="bi bi-truck"></i> {{ delivery.get_status_display }}
+            </span>
+          {% else %}
+            <span class="modern-badge badge-secondary" style="font-size: 1rem; padding: 0.5rem 1rem;">
+              {{ delivery.get_status_display }}
+            </span>
           {% endif %}
-          <input type="file" class="form-control" name="photo" accept="image/*">
         </div>
-        <div class="col-12">
-          <label class="form-label">Actualizar estado</label>
-          <select class="form-select" name="action">
-            <option value="en_ruta" {% if delivery.status == 'en_ruta' %}selected{% endif %}>En ruta</option>
-            <option value="entregada" {% if delivery.status == 'entregada' %}selected{% endif %}>Entregada</option>
-            <option value="fallida" {% if delivery.status == 'fallida' %}selected{% endif %}>Fallida</option>
-            <option value="reprogramada" {% if delivery.status == 'reprogramada' %}selected{% endif %}>Reprogramada</option>
-          </select>
+        
+        <!-- Programado -->
+        {% if delivery.scheduled_date %}
+        <div style="padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius-md); border-left: 3px solid var(--pri-blue); margin-bottom: 1rem;">
+          <i class="bi bi-calendar-check" style="color: var(--pri-blue);"></i>
+          <strong style="color: var(--text-primary);">Programado:</strong>
+          <span style="color: var(--text-primary);">{{ delivery.scheduled_date }}</span>
+          {% if delivery.scheduled_window %}
+            <span style="color: var(--pri-blue); font-weight: 600;">({{ delivery.scheduled_window }})</span>
+          {% endif %}
         </div>
-        <div class="col-12 d-grid mt-2">
-          <button class="btn btn-primary">Guardar</button>
-        </div>
-      </form>
-      {% else %}
-      <div class="alert alert-warning">
-        <h6><i class="bi bi-lock"></i> Pedido Bloqueado</h6>
-        <p class="mb-0">Este pedido no puede ser modificado porque está en estado final ({{ delivery.get_status_display }}).</p>
-      </div>
-      {% endif %}
-
-      <!-- Modal para notificación de aproximación -->
-      <div class="modal fade" id="approachingModal" tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">🚚 Notificar Aproximación</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        {% endif %}
+        
+        <!-- Hora Estimada - Rediseñada -->
+        <div style="background: linear-gradient(135deg, rgba(1, 201, 255, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%); border: 1px solid var(--pri-blue); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--pri-blue) 0%, var(--pri-purple) 100%); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0;">
+              <i class="bi bi-clock-fill"></i>
             </div>
-            <form method="post" id="approachingForm">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="send_notification">
-              <input type="hidden" name="notification_type" value="approaching">
-              <div class="modal-body">
-                <div class="mb-3">
-                  <label class="form-label">Tiempo estimado de llegada (minutos):</label>
-                  <input type="number" class="form-control" name="estimated_minutes" value="30" min="1" max="120">
-                </div>
+            <div style="flex-grow: 1;">
+              <div style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pri-blue); margin-bottom: 0.25rem;">
+                Hora Estimada de Entrega
               </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Enviar Notificación</button>
+              <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary);">
+                {{ delivery.estimated_datetime|date:"d/m/Y H:i" }}
               </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- Formulario oculto para otras notificaciones -->
-      <form method="post" id="notificationForm" style="display: none;">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="send_notification">
-        <input type="hidden" name="notification_type" id="notificationType">
-      </form>
-
-      <script>
-        function sendNotification(type) {
-          document.getElementById('notificationType').value = type;
-          document.getElementById('notificationForm').submit();
-        }
-      </script>
-
-      <!-- Modal para ampliar imágenes -->
-      <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="imageModalLabel">Imagen de Evidencia</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-              <img id="modalImage" src="" alt="Imagen ampliada" class="img-fluid rounded" style="max-height: 70vh;">
-              <div class="mt-3">
-                <small id="modalImageInfo" class="text-muted"></small>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-              <a id="downloadImage" href="#" class="btn btn-primary" download>
-                <i class="bi bi-download"></i> Descargar
-              </a>
             </div>
           </div>
         </div>
       </div>
+    </div>
+    
+    <!-- Notificaciones al Cliente -->
+    {% if can_send_notifications and is_modifiable %}
+    <div class="modern-card mb-4">
+      <div class="modern-card-header" style="background: linear-gradient(135deg, rgba(1, 201, 255, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);">
+        <h4 class="mb-0" style="color: var(--text-primary);">
+          <i class="bi bi-bell"></i> Notificar al Cliente
+        </h4>
+      </div>
+      
+      <div class="modern-card-body">
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+          Envía notificaciones al cliente sobre el estado de su entrega.
+        </p>
+        
+        <div class="d-grid gap-2">
+          <button type="button" class="btn-modern btn-secondary-modern" data-bs-toggle="modal" data-bs-target="#approachingModal">
+            <i class="bi bi-truck"></i> Aproximándose
+          </button>
+          <button type="button" class="btn-modern btn-secondary-modern" onclick="sendNotification('leaving')">
+            <i class="bi bi-box-arrow-right"></i> Saliendo
+          </button>
+          <button type="button" class="btn-modern btn-secondary-modern" onclick="sendNotification('arriving_soon')">
+            <i class="bi bi-alarm"></i> Llegando pronto (3 min)
+          </button>
+          <button type="button" class="btn-modern btn-secondary-modern" onclick="sendNotification('arrived')">
+            <i class="bi bi-geo-alt-fill"></i> He llegado
+          </button>
+          <button type="button" class="btn-modern btn-primary-modern" onclick="sendNotification('delivered')">
+            <i class="bi bi-check-circle"></i> Entregado
+          </button>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="modern-alert modern-alert-info mb-4">
+      <span class="modern-alert-icon">
+        <i class="bi bi-info-circle"></i>
+      </span>
+      <div>
+        <strong style="color: var(--text-primary);">Notificaciones Deshabilitadas</strong>
+        <p class="mb-0" style="color: var(--text-primary);">Las notificaciones al cliente solo están disponibles para pedidos en ruta o reprogramados.</p>
+      </div>
+    </div>
+    {% endif %}
+    
+    <!-- Actualizar Estado -->
+    {% if is_modifiable %}
+    <div class="modern-card">
+      <div class="modern-card-header">
+        <h4 class="mb-0" style="color: var(--text-primary);">
+          <i class="bi bi-pencil-square"></i> Actualizar Estado
+        </h4>
+      </div>
+      
+      <div class="modern-card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          
+          <div class="modern-form-group">
+            <label class="modern-form-label">
+              <i class="bi bi-chat-dots"></i> Comentarios
+            </label>
+            <textarea class="modern-form-control" name="notes" rows="3" placeholder="Agrega comentarios sobre la entrega...">{{ delivery.notes }}</textarea>
+          </div>
+          
+          <div class="modern-form-group">
+            <label class="modern-form-label">
+              <i class="bi bi-camera"></i> Foto de Evidencia
+            </label>
+            {% if delivery.photo %}
+              <img class="img-fluid rounded mb-2 cursor-pointer" src="{{ delivery.photo.url }}" alt="Evidencia"
+                   style="max-height: 200px; border: 2px solid var(--border-color); cursor: pointer;"
+                   data-bs-toggle="modal" data-bs-target="#imageModal" 
+                   onclick="showImageModal('{{ delivery.photo.url }}', 'Evidencia de entrega')">
+            {% endif %}
+            <input type="file" class="modern-form-control" name="photo" accept="image/*">
+          </div>
+          
+          <div class="modern-form-group">
+            <label class="modern-form-label">
+              <i class="bi bi-arrow-repeat"></i> Cambiar Estado
+            </label>
+            <select class="modern-form-control" name="action">
+              <option value="en_ruta" {% if delivery.status == 'en_ruta' %}selected{% endif %}>En ruta</option>
+              <option value="entregada" {% if delivery.status == 'entregada' %}selected{% endif %}>Entregada</option>
+              <option value="fallida" {% if delivery.status == 'fallida' %}selected{% endif %}>Fallida</option>
+              <option value="reprogramada" {% if delivery.status == 'reprogramada' %}selected{% endif %}>Reprogramada</option>
+            </select>
+          </div>
+          
+          <button type="submit" class="btn-modern btn-primary-modern w-100">
+            <i class="bi bi-check-circle"></i>
+            Guardar Cambios
+          </button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="modern-alert modern-alert-warning">
+      <span class="modern-alert-icon">
+        <i class="bi bi-lock"></i>
+      </span>
+      <div>
+        <strong style="color: var(--text-primary);">Pedido Bloqueado</strong>
+        <p class="mb-0" style="color: var(--text-primary);">Este pedido no puede ser modificado porque está en estado final ({{ delivery.get_status_display }}).</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
 
-      <style>
-      .cursor-pointer {
-        cursor: pointer;
-        transition: opacity 0.2s;
-      }
-
-      .cursor-pointer:hover {
-        opacity: 0.8;
-      }
-      </style>
-
-      <script>
-      function showImageModal(imageUrl, imageInfo) {
-        document.getElementById('modalImage').src = imageUrl;
-        document.getElementById('modalImageInfo').textContent = imageInfo;
-        document.getElementById('downloadImage').href = imageUrl;
-      }
-      </script>
+<!-- Historial de Eventos -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="modern-card">
+      <div class="modern-card-header">
+        <h4 class="mb-0" style="color: var(--text-primary);">
+          <i class="bi bi-clock-history"></i> Historial de Eventos
+        </h4>
+      </div>
+      
+      <div class="modern-card-body" style="padding: 0;">
+        <div class="table-responsive">
+          <table class="modern-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Usuario</th>
+                <th>De</th>
+                <th>A</th>
+                <th>Notas</th>
+                <th>Foto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for e in events %}
+              <tr>
+                <td style="color: var(--text-primary); font-weight: 500;">{{ e.created_at|date:"d/m/Y H:i" }}</td>
+                <td style="color: var(--text-primary); font-weight: 500;">
+                  {% if e.user %}
+                    <i class="bi bi-person"></i> {{ e.user.username }}
+                  {% else %}
+                    <span style="color: var(--text-muted);">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if e.status_before %}
+                    <span style="color: var(--text-secondary);">{{ e.status_before }}</span>
+                  {% else %}
+                    <span style="color: var(--text-muted);">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if e.status_after %}
+                    <span style="color: var(--pri-blue); font-weight: 600;">{{ e.status_after }}</span>
+                  {% else %}
+                    <span style="color: var(--text-muted);">-</span>
+                  {% endif %}
+                </td>
+                <td style="color: var(--text-primary);">{{ e.notes|default:"-" }}</td>
+                <td>
+                  {% if e.photo %}
+                    <img src="{{ e.photo.url }}" alt="foto" style="height:40px; border-radius: var(--radius-md); cursor: pointer;" 
+                         data-bs-toggle="modal" data-bs-target="#imageModal" 
+                         onclick="showImageModal('{{ e.photo.url }}', 'Evento del {{ e.created_at|date:"d/m/Y H:i" }}')">
+                  {% else %}
+                    <span style="color: var(--text-muted);">-</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center" style="padding: 2rem; color: var(--text-muted);">
+                  <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+                  Sin eventos registrados
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-{% endblock %}
 
+<!-- Comentarios -->
+{% if comments %}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="modern-card">
+      <div class="modern-card-header">
+        <h4 class="mb-0" style="color: var(--text-primary);">
+          <i class="bi bi-chat-left-text"></i> Comentarios
+        </h4>
+      </div>
+      
+      <div class="modern-card-body">
+        {% for c in comments %}
+        <div style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-lg); margin-bottom: 1rem; background: var(--bg-secondary);">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+                <i class="bi bi-person-circle"></i>
+                {% if c.user %}{{ c.user.username }}{% else %}Anónimo{% endif %}
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                <span class="modern-badge badge-secondary" style="font-size: 0.75rem;">{{ c.role|capfirst }}</span>
+                <span style="margin-left: 0.5rem;">{{ c.created_at|date:"d/m/Y H:i" }}</span>
+              </div>
+            </div>
+          </div>
+          <div style="color: var(--text-primary); line-height: 1.6; margin-top: 1rem;">{{ c.message }}</div>
+          {% if c.photo %}
+            <img src="{{ c.photo.url }}" style="max-height:150px; border-radius: var(--radius-md); margin-top: 1rem; cursor: pointer; border: 2px solid var(--border-color);" 
+                 data-bs-toggle="modal" data-bs-target="#imageModal" 
+                 onclick="showImageModal('{{ c.photo.url }}', 'Comentario del {{ c.created_at|date:"d/m/Y H:i" }}')">
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Modal para notificación de aproximación -->
+<div class="modal fade" id="approachingModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background: var(--bg-primary); border-radius: var(--radius-xl); overflow: hidden;">
+      <div class="modal-header" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);">
+        <h5 class="modal-title" style="color: var(--text-primary); font-weight: 700;">
+          <i class="bi bi-truck"></i> Notificar Aproximación
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" id="approachingForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="send_notification">
+        <input type="hidden" name="notification_type" value="approaching">
+        <div class="modal-body">
+          <div class="modern-form-group">
+            <label class="modern-form-label">
+              <i class="bi bi-clock"></i> Tiempo estimado de llegada (minutos):
+            </label>
+            <input type="number" class="modern-form-control" name="estimated_minutes" value="30" min="1" max="120">
+          </div>
+        </div>
+        <div class="modal-footer" style="background: var(--bg-secondary); border-top: 1px solid var(--border-color);">
+          <button type="button" class="btn-modern btn-secondary-modern" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle"></i> Cancelar
+          </button>
+          <button type="submit" class="btn-modern btn-primary-modern">
+            <i class="bi bi-send"></i> Enviar Notificación
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Formulario oculto para otras notificaciones -->
+<form method="post" id="notificationForm" style="display: none;">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="send_notification">
+  <input type="hidden" name="notification_type" id="notificationType">
+</form>
+
+<!-- Modal para ampliar imágenes -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="background: var(--bg-primary); border-radius: var(--radius-xl); overflow: hidden;">
+      <div class="modal-header" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);">
+        <h5 class="modal-title" id="imageModalLabel" style="color: var(--text-primary); font-weight: 700;">
+          <i class="bi bi-image"></i> Imagen de Evidencia
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center" style="padding: 2rem;">
+        <img id="modalImage" src="" alt="Imagen ampliada" class="img-fluid rounded" style="max-height: 70vh; border: 2px solid var(--border-color); border-radius: var(--radius-lg);">
+        <div class="mt-3">
+          <small id="modalImageInfo" style="color: var(--text-secondary); font-weight: 500;"></small>
+        </div>
+      </div>
+      <div class="modal-footer" style="background: var(--bg-secondary); border-top: 1px solid var(--border-color);">
+        <button type="button" class="btn-modern btn-secondary-modern" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Cerrar
+        </button>
+        <a id="downloadImage" href="#" class="btn-modern btn-primary-modern" download>
+          <i class="bi bi-download"></i> Descargar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.cursor-pointer {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.cursor-pointer:hover {
+  opacity: 0.8;
+}
+</style>
+
+<script>
+function sendNotification(type) {
+  document.getElementById('notificationType').value = type;
+  document.getElementById('notificationForm').submit();
+}
+
+function showImageModal(imageUrl, imageInfo) {
+  document.getElementById('modalImage').src = imageUrl;
+  document.getElementById('modalImageInfo').textContent = imageInfo;
+  document.getElementById('downloadImage').href = imageUrl;
+}
+</script>
+{% endblock %}

@@ -74,6 +74,36 @@ class DeliveryNotificationService:
         return DeliveryNotificationService.send_notification(delivery, "delivered")
     
     @staticmethod
+    def send_failed_notification(delivery, failure_reason=""):
+        """
+        Envía notificación automática cuando la entrega falla
+        Esta notificación no requiere validación de estado modificable
+        """
+        if not delivery.order.user:
+            return None
+        
+        # Construir mensaje de falla
+        base_message = f"❌ Tu pedido #{delivery.order.id} no pudo ser entregado."
+        
+        if failure_reason:
+            base_message += f" Motivo: {failure_reason}"
+        else:
+            base_message += " El repartidor intentó realizar la entrega pero no fue posible completarla."
+        
+        base_message += f" Puedes reprogramar tu entrega para una nueva fecha desde el detalle de tu pedido."
+        
+        # Crear notificación directamente sin pasar por send_notification
+        # porque ese método valida is_modifiable
+        notification = DeliveryNotification.objects.create(
+            delivery=delivery,
+            notification_type="failed",
+            recipient=delivery.order.user,
+            message=base_message
+        )
+        
+        return notification
+    
+    @staticmethod
     def get_user_notifications(user, limit=10):
         """Obtiene las notificaciones más recientes de un usuario"""
         return DeliveryNotification.objects.filter(

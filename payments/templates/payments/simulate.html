@@ -1,20 +1,61 @@
 {% extends 'base.html' %}
-{% block title %}Simular pago - PRI Shop{% endblock %}
-{% block content %}
-<div class="card card-body">
-  <h5>Simulación de pago</h5>
-  <form method="post" class="mt-3">{% csrf_token %}
-    <div class="mb-3">
-      <label class="form-label">Resultado</label>
-      <select name="outcome" class="form-select">
-        <option value="success">Éxito</option>
-        <option value="failed">Fallido</option>
-      </select>
-    </div>
-    <div class="d-grid">
-      <button class="btn btn-primary">Finalizar</button>
-    </div>
-  </form>
-</div>
-{% endblock %}
+{% block title %}Procesando Pago - PRI{% endblock %}
 
+{% block content %}
+<div class="modern-card" style="max-width: 600px; margin: 4rem auto;">
+    <div class="modern-card-body text-center" style="padding: 3rem 2rem;">
+        <!-- Animación de carga -->
+        <div style="width: 100px; height: 100px; margin: 0 auto 2rem; background: linear-gradient(135deg, var(--pri-blue) 0%, var(--pri-purple) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: pulse 1.5s infinite;">
+            <i class="bi bi-credit-card-fill" style="font-size: 3rem; color: white;"></i>
+        </div>
+        
+        <h3 style="color: var(--text-primary); font-weight: 800; margin-bottom: 1rem;">
+            Procesando tu pago...
+        </h3>
+        
+        <p style="color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 2rem;">
+            Por favor espera mientras confirmamos tu transacción
+        </p>
+        
+        <div style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2rem;">
+            <div style="width: 12px; height: 12px; background: var(--pri-blue); border-radius: 50%; animation: bounce 1s infinite;"></div>
+            <div style="width: 12px; height: 12px; background: var(--pri-blue); border-radius: 50%; animation: bounce 1s infinite 0.2s;"></div>
+            <div style="width: 12px; height: 12px; background: var(--pri-blue); border-radius: 50%; animation: bounce 1s infinite 0.4s;"></div>
+        </div>
+        
+        <form method="post" id="paymentForm" style="display: none;">
+            {% csrf_token %}
+            <input type="hidden" name="outcome" value="success">
+        </form>
+    </div>
+</div>
+
+<style>
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.8;
+    }
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+</style>
+
+<script>
+// Enviar automáticamente el formulario después de 2 segundos
+setTimeout(function() {
+    document.getElementById('paymentForm').submit();
+}, 2000);
+</script>
+{% endblock %}

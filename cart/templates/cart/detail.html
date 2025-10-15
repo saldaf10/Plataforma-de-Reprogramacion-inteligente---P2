@@ -1,46 +1,181 @@
 {% extends 'base.html' %}
-{% block title %}Carrito - PRI Shop{% endblock %}
-{% block content %}
-<h3>Carrito</h3>
-<table class="table">
-  <thead>
-    <tr>
-      <th>Producto</th>
-      <th>Cantidad</th>
-      <th>Total</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for it in items %}
-    <tr>
-      <td>{{ it.product.name }}</td>
-      <td style="max-width:140px;">
-        <form method="post" action="{% url 'cart:update' it.product.id %}" class="d-flex">{% csrf_token %}
-          <input name="quantity" type="number" min="1" value="{{ it.quantity }}" class="form-control form-control-sm me-2">
-          <button class="btn btn-sm btn-outline-secondary">Actualizar</button>
-        </form>
-      </td>
-      <td>${{ it.line_total }}</td>
-      <td><a class="btn btn-sm btn-outline-danger" href="{% url 'cart:remove' it.product.id %}">Quitar</a></td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="4">Tu carrito está vacío.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+{% block title %}Carrito de Compras - PRI{% endblock %}
 
-<div class="d-flex justify-content-between">
-  <a href="/" class="btn btn-outline-secondary">Seguir comprando</a>
-  <div>
-    <span class="me-3 h5">Total: ${{ total }}</span>
-    {% if user.is_authenticated %}
-      <a class="btn btn-primary" href="/orders/checkout/">Proceder al pago</a>
-    {% else %}
-      <a class="btn btn-primary" href="/accounts/login/">Entrar para pagar</a>
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="modern-card">
+      <div class="modern-card-header">
+        <h3 class="mb-0" style="display: flex; align-items: center; gap: 0.75rem;">
+          <i class="bi bi-cart3 text-gradient"></i>
+          <span class="text-gradient">Tu Carrito</span>
+        </h3>
+        <p class="mb-0 mt-1" style="color: var(--text-secondary); font-weight: 500;">{{ items|length }} producto{{ items|length|pluralize }} en tu carrito</p>
+      </div>
+      
+      <div class="modern-card-body" style="padding: 0;">
+        {% for it in items %}
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); transition: background var(--transition-fast);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+          <div class="row align-items-center g-3">
+            <!-- Imagen del producto -->
+            <div class="col-md-2">
+              {% if it.product.image %}
+                <img src="{{ it.product.image.url }}" alt="{{ it.product.name }}" style="width: 100%; border-radius: var(--radius-md); aspect-ratio: 1; object-fit: cover;">
+              {% else %}
+                <div style="width: 100%; aspect-ratio: 1; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: white;">
+                  <i class="bi bi-image" style="font-size: 2rem;"></i>
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Info del producto -->
+            <div class="col-md-4">
+              <h5 style="margin-bottom: 0.25rem; font-weight: 700;">{{ it.product.name }}</h5>
+              <p style="color: var(--text-muted); margin: 0; font-size: 0.9rem;">
+                <i class="bi bi-tag"></i> {{ it.product.category.name }}
+              </p>
+              <p style="color: var(--cursia-blue); font-weight: 700; margin-top: 0.5rem; font-size: 1.1rem;">
+                ${{ it.product.price }} c/u
+              </p>
+            </div>
+            
+            <!-- Cantidad -->
+            <div class="col-md-3">
+              <form method="post" action="{% url 'cart:update' it.product.id %}" class="d-flex align-items-center gap-2">
+                {% csrf_token %}
+                <div class="flex-grow-1">
+                  <label class="modern-form-label mb-1" style="font-size: 0.85rem;">Cantidad</label>
+                  <input name="quantity" type="number" min="1" max="{{ it.product.stock }}" value="{{ it.quantity }}" class="modern-form-control" style="padding: 0.5rem;">
+                </div>
+                <button type="submit" class="btn-modern btn-secondary-modern" style="padding: 0.5rem 0.75rem; margin-top: 1.5rem;" title="Actualizar cantidad">
+                  <i class="bi bi-arrow-clockwise"></i>
+                </button>
+              </form>
+            </div>
+            
+            <!-- Subtotal y Acciones -->
+            <div class="col-md-3 text-end">
+              <div style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.75rem;">
+                ${{ it.line_total }}
+              </div>
+              <a href="{% url 'cart:remove' it.product.id %}" class="btn-modern btn-secondary-modern" style="padding: 0.5rem 1rem; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;">
+                <i class="bi bi-trash"></i> Quitar
+              </a>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="padding: 3rem; text-align: center;">
+          <i class="bi bi-cart-x" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+          <h4>Tu carrito está vacío</h4>
+          <p class="text-muted mb-4">Agrega productos para comenzar tu compra</p>
+          <a href="/shop/" class="btn-modern btn-primary-modern">
+            <i class="bi bi-shop"></i> Explorar Productos
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    
+    <!-- Botón seguir comprando (solo si hay productos) -->
+    {% if items %}
+    <div class="mt-3">
+      <a href="/shop/" class="btn-modern btn-secondary-modern">
+        <i class="bi bi-arrow-left"></i> Seguir comprando
+      </a>
+    </div>
     {% endif %}
   </div>
   
+  <!-- Resumen del pedido -->
+  <div class="col-lg-4">
+    <div class="modern-card sticky-top" style="top: 6rem;">
+      <div class="modern-card-header">
+        <h4 class="mb-0">
+          <i class="bi bi-receipt"></i> Resumen del Pedido
+        </h4>
+      </div>
+      
+      <div class="modern-card-body">
+        <!-- Detalles -->
+        <div style="padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+          <div class="d-flex justify-content-between mb-2">
+            <span style="color: var(--text-secondary);">Subtotal</span>
+            <span style="font-weight: 600;">${{ total }}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span style="color: var(--text-secondary);">Envío</span>
+            <span style="color: #10b981; font-weight: 600;">
+              <i class="bi bi-check-circle"></i> Gratis
+            </span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span style="color: var(--text-secondary);">IVA (incluido)</span>
+            <span style="font-weight: 600;">$0.00</span>
+          </div>
+        </div>
+        
+        <!-- Total -->
+        <div style="padding: 1.5rem 0;">
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-size: 1.25rem; font-weight: 700;">Total</span>
+            <span style="font-size: 2rem; font-weight: 900; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+              ${{ total }}
+            </span>
+          </div>
+        </div>
+        
+        <!-- Botón de pago -->
+        {% if items %}
+          {% if user.is_authenticated %}
+            <a href="/orders/checkout/" class="btn-modern btn-primary-modern w-100" style="font-size: 1.1rem; padding: 1rem;">
+              <i class="bi bi-credit-card"></i>
+              Proceder al Pago
+            </a>
+          {% else %}
+            <a href="/accounts/login/?next=/cart/" class="btn-modern btn-primary-modern w-100" style="font-size: 1.1rem; padding: 1rem;">
+              <i class="bi bi-box-arrow-in-right"></i>
+              Iniciar sesión para pagar
+            </a>
+          {% endif %}
+          
+          <!-- Beneficios -->
+          <div class="mt-4 pt-4" style="border-top: 1px solid var(--border-color);">
+            <h6 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-secondary);">
+              ¿POR QUÉ COMPRAR EN PRI?
+            </h6>
+            <div class="d-flex align-items-start gap-2 mb-2">
+              <i class="bi bi-shield-check" style="color: var(--cursia-blue); font-size: 1.2rem; flex-shrink: 0;"></i>
+              <div>
+                <div style="font-weight: 600; font-size: 0.9rem;">Compra Segura</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">Protección de datos garantizada</div>
+              </div>
+            </div>
+            <div class="d-flex align-items-start gap-2 mb-2">
+              <i class="bi bi-truck" style="color: var(--cursia-blue); font-size: 1.2rem; flex-shrink: 0;"></i>
+              <div>
+                <div style="font-weight: 600; font-size: 0.9rem;">Envío Rápido</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">Entrega en 24-48 horas</div>
+              </div>
+            </div>
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-arrow-clockwise" style="color: var(--cursia-blue); font-size: 1.2rem; flex-shrink: 0;"></i>
+              <div>
+                <div style="font-weight: 600; font-size: 0.9rem;">Devoluciones Fáciles</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">30 días para devoluciones</div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 </div>
+
+<style>
+  .sticky-top {
+    position: sticky;
+  }
+</style>
 {% endblock %}
 

@@ -1,70 +1,178 @@
 {% extends 'base.html' %}
 
-{% block title %}Mis pedidos - PRI Shop{% endblock %}
+{% block title %}Mis Pedidos - PRI{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>Mis pedidos</h3>
-    <a href="{% url 'orders:notifications' %}" class="btn btn-outline-primary">
-        📱 Notificaciones
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <span class="text-gradient">
+            <i class="bi bi-box-seam"></i> Mis Pedidos
+        </span>
+    </h2>
+    <a href="{% url 'orders:notifications' %}" class="btn-modern btn-secondary-modern">
+        <i class="bi bi-bell"></i> Notificaciones
     </a>
 </div>
+
 {% if next_delivery %}
-<div class="card card-body mb-3">
-  <h6 class="mb-1">Tu próximo pedido</h6>
-  <div class="d-flex justify-content-between align-items-center">
-    <div>
-      <div class="fw-bold">
-        {% with products=next_delivery.order.items.all %}
-          {% for it in products %}
-            {% if forloop.first %}
-              {{ it.product.name }}{% with n=products|length %}{% if n > 1 %} +{{ n|add:"-1" }} más{% endif %}{% endwith %}
-            {% endif %}
-          {% endfor %}
-        {% endwith %}
-      </div>
-      <small class="text-muted">Programado: {% if next_delivery.scheduled_date %}{{ next_delivery.scheduled_date }}{% else %}{{ next_delivery.estimated_datetime|date:"d/m/Y" }}{% endif %}
-        {% if next_delivery.scheduled_window %} ({{ next_delivery.scheduled_window }}){% endif %}
-      </small>
-      <div class="mt-1"><span class="badge {% if next_delivery.status == 'asignada' %}bg-secondary{% elif next_delivery.status == 'en_ruta' %}bg-primary{% elif next_delivery.status == 'entregada' %}bg-success{% elif next_delivery.status == 'fallida' %}bg-danger{% else %}bg-secondary{% endif %}">{{ next_delivery.get_status_display }}</span></div>
-    </div>
-    <a class="btn btn-outline-primary" href="{% url 'orders:delivery_detail' next_delivery.order.id %}">Ver detalle</a>
+<!-- Próximo Pedido Destacado -->
+<div class="modern-card mb-4" style="border-left: 4px solid var(--pri-blue);">
+  <div class="modern-card-header" style="background: linear-gradient(135deg, rgba(1, 201, 255, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);">
+    <h4 class="mb-0" style="color: var(--text-primary);">
+      <i class="bi bi-star-fill" style="color: var(--pri-blue);"></i> Tu Próximo Pedido
+    </h4>
   </div>
-  <div class="mt-3">
-    <div class="progress" style="height: 10px;">
-      <div class="progress-bar" role="progressbar" style="width: {% if next_delivery.status == 'pendiente' %}10{% elif next_delivery.status == 'asignada' %}30{% elif next_delivery.status == 'en_ruta' %}60{% elif next_delivery.status == 'reprogramada' %}50{% elif next_delivery.status == 'entregada' %}100{% else %}0{% endif %}%"></div>
+  
+  <div class="modern-card-body">
+    <div class="row align-items-center g-3">
+      <div class="col-lg-7">
+        <h5 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.75rem;">
+          {% with products=next_delivery.order.items.all %}
+            {% for it in products %}
+              {% if forloop.first %}
+                {{ it.product.name }}{% with n=products|length %}{% if n > 1 %} <span style="color: var(--pri-blue);">+{{ n|add:"-1" }} más</span>{% endif %}{% endwith %}
+              {% endif %}
+            {% endfor %}
+          {% endwith %}
+        </h5>
+        
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+          <div style="color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
+            <i class="bi bi-calendar-event"></i>
+            <strong>Programado:</strong>
+            <span>{% if next_delivery.scheduled_date %}{{ next_delivery.scheduled_date }}{% else %}{{ next_delivery.estimated_datetime|date:"d/m/Y" }}{% endif %}</span>
+          </div>
+          {% if next_delivery.scheduled_window %}
+          <div style="color: var(--pri-blue); display: flex; align-items: center; gap: 0.5rem;">
+            <i class="bi bi-clock"></i>
+            <strong>{{ next_delivery.scheduled_window }}</strong>
+          </div>
+          {% endif %}
+        </div>
+        
+        <div>
+          {% if next_delivery.status == 'entregada' %}
+            <span class="modern-badge badge-success">
+              <i class="bi bi-check-circle"></i> {{ next_delivery.get_status_display }}
+            </span>
+          {% elif next_delivery.status == 'fallida' %}
+            <span class="modern-badge badge-danger">
+              <i class="bi bi-x-circle"></i> {{ next_delivery.get_status_display }}
+            </span>
+          {% elif next_delivery.status == 'en_ruta' %}
+            <span class="modern-badge" style="background: #01c9ff;">
+              <i class="bi bi-truck"></i> {{ next_delivery.get_status_display }}
+            </span>
+          {% elif next_delivery.status == 'asignada' %}
+            <span class="modern-badge badge-info">
+              <i class="bi bi-person-check"></i> {{ next_delivery.get_status_display }}
+            </span>
+          {% else %}
+            <span class="modern-badge badge-secondary">
+              {{ next_delivery.get_status_display }}
+            </span>
+          {% endif %}
+        </div>
+        
+        <!-- Barra de Progreso -->
+        <div class="mt-3">
+          <div style="background: var(--bg-tertiary); border-radius: var(--radius-full); height: 12px; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, var(--pri-blue) 0%, var(--pri-purple) 100%); height: 100%; width: {% if next_delivery.status == 'pendiente' %}10{% elif next_delivery.status == 'asignada' %}30{% elif next_delivery.status == 'en_ruta' %}60{% elif next_delivery.status == 'reprogramada' %}50{% elif next_delivery.status == 'entregada' %}100{% else %}0{% endif %}%; transition: width 0.5s ease;"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-lg-5 text-lg-end">
+        <a class="btn-modern btn-primary-modern w-100 w-lg-auto" href="{% url 'orders:delivery_detail' next_delivery.order.id %}">
+          <i class="bi bi-eye"></i>
+          Ver Detalle Completo
+        </a>
+      </div>
     </div>
   </div>
 </div>
 {% endif %}
-<div class="list-group">
-  {% for o in orders %}
-  <a class="list-group-item list-group-item-action" href="{% url 'orders:delivery_detail' o.id %}">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <div class="fw-bold">
-          {% with products=o.items.all %}
-            {% for it in products %}
-              {% if forloop.first %}
-                {{ it.product.name }}{% with n=products|length %}{% if n > 1 %} +{{ n|add:"-1" }} más{% endif %}{% endwith %}
-              {% endif %}
-            {% endfor %}
-          {% endwith %}
+
+<!-- Lista de Todos los Pedidos -->
+<div class="modern-card">
+  <div class="modern-card-header">
+    <h4 class="mb-0" style="color: var(--text-primary);">
+      <i class="bi bi-list-ul"></i> Historial de Pedidos
+    </h4>
+  </div>
+  
+  <div class="modern-card-body" style="padding: 0;">
+    {% for o in orders %}
+    <a href="{% url 'orders:delivery_detail' o.id %}" style="display: block; padding: 1.5rem; border-bottom: 1px solid var(--border-color); text-decoration: none; transition: background var(--transition-fast);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+      <div class="row align-items-center g-3">
+        <!-- Icono del Pedido -->
+        <div class="col-auto d-none d-md-block">
+          <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--pri-blue) 0%, var(--pri-purple) 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+            <i class="bi bi-box-seam"></i>
+          </div>
         </div>
-        <small class="text-muted">{{ o.created_at|date:"d/m/Y H:i" }}</small>
+        
+        <!-- Info del Pedido -->
+        <div class="col">
+          <h5 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.5rem;">
+            {% with products=o.items.all %}
+              {% for it in products %}
+                {% if forloop.first %}
+                  {{ it.product.name }}{% with n=products|length %}{% if n > 1 %} <span style="color: var(--pri-blue); font-size: 0.9rem;">+{{ n|add:"-1" }} más</span>{% endif %}{% endwith %}
+                {% endif %}
+              {% endfor %}
+            {% endwith %}
+          </h5>
+          <div style="color: var(--text-secondary); font-size: 0.9rem;">
+            <i class="bi bi-calendar3"></i> {{ o.created_at|date:"d/m/Y H:i" }}
+          </div>
+        </div>
+        
+        <!-- Estado y Precio -->
+        <div class="col-auto text-end">
+          {% if o.delivery %}
+            {% if o.delivery.status == 'entregada' %}
+              <span class="modern-badge badge-success mb-2">
+                <i class="bi bi-check-circle"></i> {{ o.delivery.get_status_display }}
+              </span>
+            {% elif o.delivery.status == 'fallida' %}
+              <span class="modern-badge badge-danger mb-2">
+                <i class="bi bi-x-circle"></i> {{ o.delivery.get_status_display }}
+              </span>
+            {% elif o.delivery.status == 'en_ruta' %}
+              <span class="modern-badge mb-2" style="background: #01c9ff;">
+                <i class="bi bi-truck"></i> {{ o.delivery.get_status_display }}
+              </span>
+            {% elif o.delivery.status == 'asignada' %}
+              <span class="modern-badge badge-info mb-2">
+                <i class="bi bi-person-check"></i> {{ o.delivery.get_status_display }}
+              </span>
+            {% else %}
+              <span class="modern-badge badge-secondary mb-2">
+                {{ o.delivery.get_status_display }}
+              </span>
+            {% endif %}
+          {% else %}
+            <span class="modern-badge badge-warning mb-2">Sin entrega</span>
+          {% endif %}
+          
+          <div style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, var(--pri-blue) 0%, var(--pri-purple) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            ${{ o.total_amount }}
+          </div>
+        </div>
       </div>
-      <div class="text-end">
-        {% if o.delivery %}
-          <span class="badge {% if o.delivery.status == 'asignada' %}bg-secondary{% elif o.delivery.status == 'en_ruta' %}bg-primary{% elif o.delivery.status == 'entregada' %}bg-success{% elif o.delivery.status == 'fallida' %}bg-danger{% else %}bg-secondary{% endif %}">{{ o.delivery.get_status_display }}</span>
-        {% else %}
-          <span class="badge bg-warning text-dark">Sin entrega</span>
-        {% endif %}
-        <div class="fw-bold mt-1">${{ o.total_amount }}</div>
-      </div>
+    </a>
+    {% empty %}
+    <div class="text-center" style="padding: 4rem 2rem;">
+      <i class="bi bi-inbox" style="font-size: 4rem; color: var(--text-muted); display: block; margin-bottom: 1rem;"></i>
+      <h4 style="color: var(--text-primary);">No tienes pedidos aún</h4>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Comienza a comprar para ver tus pedidos aquí</p>
+      <a href="/shop/" class="btn-modern btn-primary-modern">
+        <i class="bi bi-shop"></i> Ir a la Tienda
+      </a>
     </div>
-  </a>
-  {% empty %}
-  <p>No tienes pedidos aún.</p>
-  {% endfor %}
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}
 

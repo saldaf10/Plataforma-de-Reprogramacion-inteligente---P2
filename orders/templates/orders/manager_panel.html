@@ -1,79 +1,195 @@
 {% extends 'base.html' %}
-{% block title %}Panel{% endblock %}
+{% block title %}Panel de Gestión - PRI{% endblock %}
+
 {% block content %}
-<h3>Panel</h3>
+<h2 class="mb-4">
+  <span class="text-gradient">
+    <i class="bi bi-speedometer2"></i> Panel de Gestión
+  </span>
+</h2>
 
-<div class="row mb-3">
-  <div class="col-md-3"><div class="card card-body text-center"><div class="h2">{{ total }}</div><div>Total pedidos</div></div></div>
-  <div class="col-md-3"><div class="card card-body text-center"><div class="h2">{{ delivered }}</div><div>Entregadas</div></div></div>
-  <div class="col-md-3"><div class="card card-body text-center"><div class="h2">{{ pending }}</div><div>En proceso</div></div></div>
-  <div class="col-md-3"><div class="card card-body text-center"><div class="h2">{{ failed }}</div><div>Fallidas</div></div></div>
+<!-- Estadísticas -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3">
+    <div class="modern-card text-center" style="border-top: 4px solid #01c9ff;">
+      <div class="modern-card-body">
+        <div style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">
+          {{ total }}
+        </div>
+        <div style="color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.9rem;">
+          <i class="bi bi-bag"></i> Total Pedidos
+        </div>
+      </div>
+    </div>
+  </div>
   
+  <div class="col-md-3">
+    <div class="modern-card text-center" style="border-top: 4px solid #10b981;">
+      <div class="modern-card-body">
+        <div style="font-size: 3rem; font-weight: 900; color: #10b981; margin-bottom: 0.5rem;">
+          {{ delivered }}
+        </div>
+        <div style="color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.9rem;">
+          <i class="bi bi-check-circle"></i> Entregadas
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="modern-card text-center" style="border-top: 4px solid #f59e0b;">
+      <div class="modern-card-body">
+        <div style="font-size: 3rem; font-weight: 900; color: #f59e0b; margin-bottom: 0.5rem;">
+          {{ pending }}
+        </div>
+        <div style="color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.9rem;">
+          <i class="bi bi-clock"></i> En Proceso
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="modern-card text-center" style="border-top: 4px solid #ef4444;">
+      <div class="modern-card-body">
+        <div style="font-size: 3rem; font-weight: 900; color: #ef4444; margin-bottom: 0.5rem;">
+          {{ failed }}
+        </div>
+        <div style="color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.9rem;">
+          <i class="bi bi-x-circle"></i> Fallidas
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="card card-body mb-3">
-  <form method="get" class="row g-2">
-    <div class="col-md-4">
-      <input class="form-control" name="q" value="{{ q }}" placeholder="Buscar: nombre, dirección, email, #pedido">
-    </div>
-    <div class="col-md-3">
-      <select class="form-select" name="status">
-        <option value="">Todos los estados</option>
-        <option value="pendiente" {% if status == 'pendiente' %}selected{% endif %}>Pendiente</option>
-        <option value="asignada" {% if status == 'asignada' %}selected{% endif %}>Asignada</option>
-        <option value="en_ruta" {% if status == 'en_ruta' %}selected{% endif %}>En ruta</option>
-        <option value="reprogramada" {% if status == 'reprogramada' %}selected{% endif %}>Reprogramada</option>
-        <option value="entregada" {% if status == 'entregada' %}selected{% endif %}>Entregada</option>
-        <option value="fallida" {% if status == 'fallida' %}selected{% endif %}>Fallida</option>
-      </select>
-    </div>
-    <div class="col-md-2 d-grid">
-      <button class="btn btn-primary">Aplicar</button>
-    </div>
-  </form>
+<!-- Filtros -->
+<div class="modern-card mb-4">
+  <div class="modern-card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-5">
+        <label class="modern-form-label">
+          <i class="bi bi-search"></i> Búsqueda
+        </label>
+        <input class="modern-form-control" name="q" value="{{ q }}" placeholder="Buscar por nombre, dirección, email o #pedido">
+      </div>
+      <div class="col-md-4">
+        <label class="modern-form-label">
+          <i class="bi bi-filter"></i> Estado
+        </label>
+        <select class="modern-form-control" name="status">
+          <option value="">Todos los estados</option>
+          <option value="pendiente" {% if status == 'pendiente' %}selected{% endif %}>Pendiente</option>
+          <option value="asignada" {% if status == 'asignada' %}selected{% endif %}>Asignada</option>
+          <option value="en_ruta" {% if status == 'en_ruta' %}selected{% endif %}>En ruta</option>
+          <option value="reprogramada" {% if status == 'reprogramada' %}selected{% endif %}>Reprogramada</option>
+          <option value="entregada" {% if status == 'entregada' %}selected{% endif %}>Entregada</option>
+          <option value="fallida" {% if status == 'fallida' %}selected{% endif %}>Fallida</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn-modern btn-primary-modern w-100">
+          <i class="bi bi-check-circle"></i> Aplicar Filtros
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Cliente</th>
-        <th>Dirección</th>
-        <th>Ciudad</th>
-        <th>Estado</th>
-        <th>Rider</th>
-        <th>Fecha</th>
-        <th>Total</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for o in orders %}
-      <tr>
-        <td>{{ o.id }}</td>
-        <td>{{ o.full_name }}<br><small class="text-muted">{{ o.email }}</small></td>
-        <td>{{ o.address }}</td>
-        <td>{{ o.city }}</td>
-        <td>
-          {% if o.delivery %}
-          <span class="badge bg-secondary">{{ o.delivery.get_status_display }}</span>
-          {% else %}
-          <span class="badge bg-warning text-dark">Sin entrega</span>
-          {% endif %}
-        </td>
-        <td>{% if o.delivery and o.delivery.rider %}{{ o.delivery.rider.username }}{% else %}-{% endif %}</td>
-        <td>{{ o.created_at|date:"d/m/Y H:i" }}</td>
-        <td>${{ o.total_amount }}</td>
-        <td>
-          <a class="btn btn-sm btn-outline-primary" href="{% url 'orders:delivery_detail' o.id %}">Gestionar</a>
-        </td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="9">No hay pedidos.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<!-- Tabla de Pedidos -->
+<div class="modern-card">
+  <div class="modern-card-header">
+    <h4 class="mb-0">
+      <i class="bi bi-list-ul"></i> Listado de Pedidos
+    </h4>
+  </div>
+  
+  <div class="modern-card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Cliente</th>
+            <th>Dirección</th>
+            <th>Ciudad</th>
+            <th>Estado</th>
+            <th>Repartidor</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in orders %}
+          <tr>
+            <td style="font-weight: 700; color: var(--text-primary);">#{{ o.id }}</td>
+            <td>
+              <div style="font-weight: 600; color: var(--text-primary);">{{ o.full_name }}</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">{{ o.email }}</div>
+            </td>
+            <td style="color: var(--text-primary);">{{ o.address }}</td>
+            <td style="color: var(--text-primary);">{{ o.city }}</td>
+            <td>
+              {% if o.delivery %}
+                {% if o.delivery.status == 'entregada' %}
+                  <span class="modern-badge badge-success">
+                    <i class="bi bi-check-circle"></i> {{ o.delivery.get_status_display }}
+                  </span>
+                {% elif o.delivery.status == 'fallida' %}
+                  <span class="modern-badge badge-danger">
+                    <i class="bi bi-x-circle"></i> {{ o.delivery.get_status_display }}
+                  </span>
+                {% elif o.delivery.status == 'en_ruta' %}
+                  <span class="modern-badge" style="background: #01c9ff; color: white;">
+                    <i class="bi bi-truck"></i> {{ o.delivery.get_status_display }}
+                  </span>
+                {% elif o.delivery.status == 'reprogramada' %}
+                  <span class="modern-badge badge-warning">
+                    <i class="bi bi-clock-history"></i> {{ o.delivery.get_status_display }}
+                  </span>
+                {% else %}
+                  <span class="modern-badge badge-secondary">
+                    {{ o.delivery.get_status_display }}
+                  </span>
+                {% endif %}
+              {% else %}
+                <span class="modern-badge badge-warning">
+                  <i class="bi bi-exclamation-triangle"></i> Sin entrega
+                </span>
+              {% endif %}
+            </td>
+            <td style="color: var(--text-primary); font-weight: 500;">
+              {% if o.delivery and o.delivery.rider %}
+                <i class="bi bi-person-check"></i> {{ o.delivery.rider.username }}
+              {% else %}
+                <span style="color: var(--text-muted);">-</span>
+              {% endif %}
+            </td>
+            <td style="color: var(--text-primary); font-weight: 500;">{{ o.created_at|date:"d/m/Y H:i" }}</td>
+            <td>
+              <span style="font-weight: 700; color: var(--pri-blue); font-size: 1.05rem;">
+                ${{ o.total_amount }}
+              </span>
+            </td>
+            <td>
+              <a class="btn-modern btn-secondary-modern" href="{% url 'orders:delivery_detail' o.id %}" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+                <i class="bi bi-gear"></i> Gestionar
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="text-center" style="padding: 3rem; color: var(--text-muted);">
+              <i class="bi bi-inbox" style="font-size: 3rem; display: block; margin-bottom: 1rem;"></i>
+              <strong>No hay pedidos que mostrar</strong>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 {% endblock %}
 

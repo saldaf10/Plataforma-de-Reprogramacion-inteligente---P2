@@ -1,43 +1,218 @@
 {% extends 'base.html' %}
-{% block title %}Mis entregas asignadas{% endblock %}
+{% block title %}Mis Entregas Asignadas - PRI{% endblock %}
+
 {% block content %}
-<h3>Mis entregas asignadas</h3>
-
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Cliente</th>
-        <th>Dirección</th>
-        <th>Programado</th>
-        <th>Hora estimada</th>
-        <th>Estado</th>
-        <th>Total</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for d in deliveries %}
-      <tr>
-        <td><a href="{% url 'orders:delivery_detail' d.order.id %}">#{{ d.order.id }}</a></td>
-        <td>{{ d.order.full_name }}<br><small class="text-muted">{{ d.order.email }}</small></td>
-        <td>{{ d.order.address }}, {{ d.order.city }}</td>
-        <td>
-          {% if d.scheduled_date %}{{ d.scheduled_date }}{% endif %}
-          {% if d.scheduled_window %}<br><small class="text-muted">{{ d.scheduled_window }}</small>{% endif %}
-        </td>
-        <td>{{ d.estimated_datetime|date:"d/m/Y H:i" }}</td>
-        <td><span class="badge {% if d.status == 'asignada' %}bg-secondary{% elif d.status == 'en_ruta' %}bg-primary{% elif d.status == 'entregada' %}bg-success{% elif d.status == 'fallida' %}bg-danger{% else %}bg-secondary{% endif %}">{{ d.get_status_display }}</span></td>
-        <td>${{ d.order.total_amount }}</td>
-        <td><a class="btn btn-sm btn-outline-primary" href="{% url 'orders:delivery_detail' d.order.id %}">Detalles</a></td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="7">No tienes entregas asignadas.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <span class="text-gradient">
+            <i class="bi bi-truck"></i> Mis Entregas Asignadas
+        </span>
+    </h2>
+    <a href="{% url 'orders:notifications' %}" class="btn-modern btn-secondary-modern">
+        <i class="bi bi-bell"></i> Notificaciones
+    </a>
 </div>
-{% endblock %}
 
+{% if deliveries %}
+<div class="modern-card">
+    <div class="modern-card-header">
+        <h4 class="mb-0" style="color: var(--text-primary);">
+            <i class="bi bi-list-check"></i> Entregas Pendientes
+        </h4>
+    </div>
+    
+    <div class="modern-card-body" style="padding: 0;">
+        {% for d in deliveries %}
+        <a href="{% url 'orders:delivery_detail' d.order.id %}" style="display: block; padding: 1.5rem; border-bottom: 1px solid var(--border-color); text-decoration: none; transition: background var(--transition-fast);" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+            <div class="row align-items-center g-3">
+                <!-- Icono de Estado -->
+                <div class="col-auto d-none d-md-block">
+                    {% if d.status == 'entregada' %}
+                        <div style="width: 60px; height: 60px; background: #10b981; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                    {% elif d.status == 'en_ruta' %}
+                        <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--pri-blue) 0%, var(--pri-purple) 100%); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                            <i class="bi bi-truck"></i>
+                        </div>
+                    {% elif d.status == 'fallida' %}
+                        <div style="width: 60px; height: 60px; background: #ef4444; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                            <i class="bi bi-x-circle"></i>
+                        </div>
+                    {% else %}
+                        <div style="width: 60px; height: 60px; background: #64748b; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Información del Cliente y Pedido -->
+                <div class="col">
+                    <!-- Número de Pedido -->
+                    <div style="font-size: 0.85rem; color: var(--pri-blue); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                        <i class="bi bi-hash"></i> Pedido {{ d.order.id }}
+                    </div>
+                    
+                    <!-- Cliente -->
+                    <h5 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.5rem;">
+                        <i class="bi bi-person"></i> {{ d.order.full_name }}
+                    </h5>
+                    
+                    <!-- Info adicional -->
+                    <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; color: var(--text-secondary); font-size: 0.9rem;">
+                        <div>
+                            <i class="bi bi-envelope"></i> {{ d.order.email }}
+                        </div>
+                        <div>
+                            <i class="bi bi-geo-alt"></i> {{ d.order.address }}, {{ d.order.city }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Fecha y Estado -->
+                <div class="col-lg-3">
+                    <!-- Programado -->
+                    {% if d.scheduled_date %}
+                    <div style="padding: 0.75rem; background: var(--bg-secondary); border-radius: var(--radius-md); margin-bottom: 0.75rem; border-left: 3px solid var(--pri-blue);">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem;">
+                            <i class="bi bi-calendar-check"></i> Programado
+                        </div>
+                        <div style="font-weight: 700; color: var(--text-primary);">{{ d.scheduled_date }}</div>
+                        {% if d.scheduled_window %}
+                            <div style="color: var(--pri-blue); font-size: 0.9rem; font-weight: 600;">{{ d.scheduled_window }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Hora Estimada -->
+                    <div style="padding: 0.75rem; background: linear-gradient(135deg, rgba(1, 201, 255, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%); border-radius: var(--radius-md); margin-bottom: 0.75rem; border: 1px solid var(--pri-blue);">
+                        <div style="font-size: 0.75rem; color: var(--pri-blue); font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem;">
+                            <i class="bi bi-clock"></i> Hora Estimada
+                        </div>
+                        <div style="font-weight: 700; color: var(--text-primary);">{{ d.estimated_datetime|date:"H:i" }}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">{{ d.estimated_datetime|date:"d/m/Y" }}</div>
+                    </div>
+                    
+                    <!-- Estado -->
+                    <div class="mb-2">
+                        {% if d.status == 'entregada' %}
+                            <span class="modern-badge badge-success" style="font-size: 0.85rem; width: 100%; text-align: center; padding: 0.5rem;">
+                                <i class="bi bi-check-circle"></i> {{ d.get_status_display }}
+                            </span>
+                        {% elif d.status == 'fallida' %}
+                            <span class="modern-badge badge-danger" style="font-size: 0.85rem; width: 100%; text-align: center; padding: 0.5rem;">
+                                <i class="bi bi-x-circle"></i> {{ d.get_status_display }}
+                            </span>
+                        {% elif d.status == 'en_ruta' %}
+                            <span class="modern-badge" style="background: #01c9ff; color: white; font-size: 0.85rem; width: 100%; text-align: center; padding: 0.5rem;">
+                                <i class="bi bi-truck"></i> {{ d.get_status_display }}
+                            </span>
+                        {% elif d.status == 'asignada' %}
+                            <span class="modern-badge badge-info" style="font-size: 0.85rem; width: 100%; text-align: center; padding: 0.5rem;">
+                                <i class="bi bi-person-check"></i> {{ d.get_status_display }}
+                            </span>
+                        {% elif d.status == 'reprogramada' %}
+                            <span class="modern-badge badge-warning" style="font-size: 0.85rem; width: 100%; text-align: center; padding: 0.5rem;">
+                                <i class="bi bi-arrow-repeat"></i> {{ d.get_status_display }}
+                            </span>
+                        {% else %}
+                            <span class="modern-badge badge-secondary" style="font-size: 0.85rem; width: 100%; text-align: center; padding: 0.5rem;">
+                                {{ d.get_status_display }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Total y Acción -->
+                <div class="col-auto text-end">
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">
+                        Total
+                    </div>
+                    <div style="font-size: 1.75rem; font-weight: 900; background: linear-gradient(135deg, var(--pri-blue) 0%, var(--pri-purple) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem;">
+                        ${{ d.order.total_amount }}
+                    </div>
+                    <div class="btn-modern btn-primary-modern" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+                        <i class="bi bi-arrow-right-circle"></i> Ver
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Estadísticas Rápidas -->
+<div class="row g-4 mt-4">
+    <div class="col-md-4">
+        <div class="modern-card" style="border-left: 4px solid #01c9ff;">
+            <div class="modern-card-body text-center">
+                <div style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    {{ deliveries|length }}
+                </div>
+                <div style="color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.9rem;">
+                    Entregas Asignadas
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="modern-card" style="border-left: 4px solid #10b981;">
+            <div class="modern-card-body text-center">
+                <div style="font-size: 3rem; font-weight: 900; color: #10b981;">
+                    {% with completed=deliveries|length %}
+                        {% with entregadas=0 %}
+                            {% for d in deliveries %}
+                                {% if d.status == 'entregada' %}
+                                    {% with entregadas=entregadas|add:1 %}{% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ entregadas }}
+                        {% endwith %}
+                    {% endwith %}
+                </div>
+                <div style="color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.9rem;">
+                    Entregadas
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="modern-card" style="border-left: 4px solid #01c9ff;">
+            <div class="modern-card-body text-center">
+                <div style="font-size: 3rem; font-weight: 900; color: #01c9ff;">
+                    {% with en_ruta=0 %}
+                        {% for d in deliveries %}
+                            {% if d.status == 'en_ruta' %}
+                                {% with en_ruta=en_ruta|add:1 %}{% endwith %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ en_ruta }}
+                    {% endwith %}
+                </div>
+                <div style="color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.9rem;">
+                    En Ruta
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Estado vacío -->
+<div class="modern-card">
+    <div class="modern-card-body text-center" style="padding: 4rem 2rem;">
+        <i class="bi bi-inbox" style="font-size: 5rem; color: var(--text-muted); display: block; margin-bottom: 1.5rem;"></i>
+        <h3 style="color: var(--text-primary); margin-bottom: 1rem;">No tienes entregas asignadas</h3>
+        <p style="color: var(--text-secondary); font-size: 1.1rem; max-width: 500px; margin: 0 auto 1.5rem;">
+            Cuando te asignen entregas, aparecerán aquí para que puedas gestionarlas.
+        </p>
+        <div class="btn-modern btn-secondary-modern">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

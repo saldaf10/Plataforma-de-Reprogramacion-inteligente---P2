@@ -4,7 +4,7 @@ from django.db import transaction
 from django.db.models import Count, Q
 from django.contrib import messages
 from catalog.models import Product
-from .models import Order, OrderItem, Delivery, DeliveryEvent, DeliveryComment
+from .models import Order, OrderItem, Delivery, DeliveryEvent, DeliveryComment, DeliveryNotification
 from .notification_service import DeliveryNotificationService
 
 
@@ -105,13 +105,19 @@ def delivery_detail(request, order_id: int):
             return redirect("orders:my_orders")
 
     if request.method == "POST":
+        action = request.POST.get("action")
+        
         # Verificar si el pedido está en estado final
+        # EXCEPCIÓN: Permitir reprogramar pedidos fallidos (clientes)
         if delivery.is_final_state:
-            messages.error(request, "Este pedido no puede ser modificado porque está en estado final (entregado o fallido).")
-            return redirect("orders:delivery_detail", order_id=order.id)
+            # Si es cliente intentando reprogramar un pedido fallido, permitir
+            if action == "reschedule" and delivery.status == "fallida" and (user_role == "cliente" or not user_role):
+                pass  # Permitir continuar
+            else:
+                messages.error(request, "Este pedido no puede ser modificado porque está en estado final (entregado o fallido).")
+                return redirect("orders:delivery_detail", order_id=order.id)
         
         # Actualizaciones dependiendo del rol
-        action = request.POST.get("action")
         if user_role == "manager":
             if action == "assign":
                 before = delivery.status
@@ -158,6 +164,14 @@ def delivery_detail(request, order_id: int):
                     notes=delivery.notes,
                     photo=delivery.photo if photo_file else None,
                 )
+                
+                # Si el pedido se marca como fallido, enviar notificación automática al cliente
+                if action == "fallida":
+                    failure_reason = delivery.failure_reason or delivery.notes or ""
+                    DeliveryNotificationService.send_failed_notification(delivery, failure_reason)
+                    messages.success(request, f"Entrega marcada como fallida. El cliente ha sido notificado automáticamente.")
+                else:
+                    messages.success(request, f"Estado actualizado a '{delivery.get_status_display()}'.")
             # Manejar notificaciones del repartidor
             elif action == "send_notification":
                 # Validar que el pedido esté en un estado válido para notificaciones
@@ -183,16 +197,73 @@ def delivery_detail(request, order_id: int):
                     elif notification_type == "delivered":
                         DeliveryNotificationService.send_delivered_notification(delivery)
                         messages.success(request, "Notificación enviada: El cliente fue notificado que su pedido fue entregado.")
-        # Cliente no actualiza estado aquí
+        elif user_role == "cliente" or not user_role:
+            # El cliente puede reprogramar su entrega si está en estado válido
+            if action == "reschedule":
+                # Solo permitir reprogramar si el estado lo permite (incluyendo fallidas)
+                if delivery.status in ['pendiente', 'asignada', 'reprogramada', 'fallida']:
+                    scheduled_date = request.POST.get("scheduled_date")
+                    scheduled_window = request.POST.get("scheduled_window")
+                    
+                    if scheduled_date:
+                        from datetime import datetime
+                        try:
+                            # Validar fecha
+                            date_obj = datetime.strptime(scheduled_date, "%Y-%m-%d").date()
+                            today = datetime.now().date()
+                            
+                            if date_obj < today:
+                                messages.error(request, "No puedes seleccionar una fecha pasada.")
+                            else:
+                                old_date = delivery.scheduled_date
+                                old_window = delivery.scheduled_window
+                                
+                                delivery.scheduled_date = date_obj
+                                delivery.scheduled_window = scheduled_window if scheduled_window else None
+                                delivery.status = "reprogramada"
+                                delivery.save()
+                                
+                                # Crear evento
+                                DeliveryEvent.objects.create(
+                                    delivery=delivery,
+                                    user=request.user,
+                                    status_before=delivery.status,
+                                    status_after="reprogramada",
+                                    notes=f"Cliente reprogramó de {old_date} {old_window or ''} a {date_obj} {scheduled_window or ''}"
+                                )
+                                
+                                # Enviar notificación al repartidor si está asignado
+                                if delivery.rider:
+                                    notification_message = f"📅 El cliente {request.user.username} ha reprogramado el pedido #{order.id} para el {date_obj}"
+                                    if scheduled_window:
+                                        notification_message += f" entre las {scheduled_window}"
+                                    notification_message += ". Por favor, revisa los detalles actualizados."
+                                    
+                                    DeliveryNotification.objects.create(
+                                        delivery=delivery,
+                                        notification_type="rescheduled",
+                                        recipient=delivery.rider,
+                                        message=notification_message
+                                    )
+                                
+                                messages.success(request, f"Tu entrega ha sido reprogramada para el {date_obj} {scheduled_window or ''}. Recibirás una confirmación pronto.")
+                        except ValueError:
+                            messages.error(request, "Fecha inválida. Por favor usa el formato correcto.")
+                    else:
+                        messages.error(request, "Debes seleccionar una fecha.")
+                else:
+                    messages.error(request, f"No puedes reprogramar un pedido en estado '{delivery.get_status_display()}'. Solo se pueden reprogramar pedidos pendientes, asignados, reprogramados o fallidos.")
 
         return redirect("orders:delivery_detail", order_id=order.id)
 
     # Render por rol
+    from datetime import datetime
     context = {
         "order": order, 
         "delivery": delivery,
         "is_modifiable": delivery.is_modifiable,
-        "is_final_state": delivery.is_final_state
+        "is_final_state": delivery.is_final_state,
+        "today": datetime.now().date()
     }
     if user_role == "manager":
         from django.contrib.auth.models import User

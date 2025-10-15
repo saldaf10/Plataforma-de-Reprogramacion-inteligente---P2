@@ -1,54 +1,132 @@
 {% extends 'base.html' %}
-{% block title %}Checkout - PRI Shop{% endblock %}
+{% block title %}Checkout - PRI{% endblock %}
+
 {% block content %}
-<h3>Checkout</h3>
-<div class="row">
-  <div class="col-md-7">
-    <form method="post" class="card card-body">{% csrf_token %}
-      <div class="row g-2">
-        <div class="col-md-6">
-          <label class="form-label">Nombre completo</label>
-          <input name="full_name" required class="form-control">
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Email</label>
-          <input name="email" type="email" required class="form-control">
-        </div>
-        <div class="col-12">
-          <label class="form-label">Dirección</label>
-          <input name="address" required class="form-control">
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Ciudad</label>
-          <input name="city" required class="form-control">
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Código Postal</label>
-          <input name="postal_code" required class="form-control">
-        </div>
+<h2 class="mb-4">
+  <span class="text-gradient">
+    <i class="bi bi-credit-card"></i> Finalizar Compra
+  </span>
+</h2>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="modern-card">
+      <div class="modern-card-header">
+        <h4 class="mb-0">
+          <i class="bi bi-truck"></i> Información de Envío
+        </h4>
       </div>
-      <div class="d-grid mt-3">
-        <button class="btn btn-primary">Ir a pagar (simulación)</button>
+      
+      <div class="modern-card-body">
+        <form method="post">
+          {% csrf_token %}
+          
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="modern-form-group">
+                <label class="modern-form-label">
+                  <i class="bi bi-person"></i> Nombre Completo
+                </label>
+                <input name="full_name" required class="modern-form-control" placeholder="Juan Pérez">
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="modern-form-group">
+                <label class="modern-form-label">
+                  <i class="bi bi-envelope"></i> Email
+                </label>
+                <input name="email" type="email" required class="modern-form-control" placeholder="tu@email.com">
+              </div>
+            </div>
+            
+            <div class="col-12">
+              <div class="modern-form-group">
+                <label class="modern-form-label">
+                  <i class="bi bi-geo-alt"></i> Dirección
+                </label>
+                <input name="address" required class="modern-form-control" placeholder="Calle Principal #123">
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="modern-form-group">
+                <label class="modern-form-label">
+                  <i class="bi bi-building"></i> Ciudad
+                </label>
+                <input name="city" required class="modern-form-control" placeholder="Ciudad">
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="modern-form-group">
+                <label class="modern-form-label">
+                  <i class="bi bi-mailbox"></i> Código Postal
+                </label>
+                <input name="postal_code" required class="modern-form-control" placeholder="00000">
+              </div>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn-modern btn-primary-modern w-100 mt-4" style="font-size: 1.1rem; padding: 1rem;">
+            <i class="bi bi-shield-check"></i>
+            Proceder al Pago (Simulación)
+          </button>
+        </form>
       </div>
-    </form>
+    </div>
   </div>
-  <div class="col-md-5">
-    <div class="card card-body">
-      <h6>Resumen</h6>
-      <ul class="list-group list-group-flush">
-        {% for it in items %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          <span>{{ it.product.name }} x {{ it.quantity }}</span>
-          <strong>${{ it.line_total }}</strong>
-        </li>
-        {% endfor %}
-      </ul>
-      <div class="d-flex justify-content-between mt-3">
-        <span>Total</span>
-        <strong>${{ total }}</strong>
+  
+  <div class="col-lg-5">
+    <div class="modern-card sticky-top" style="top: 6rem;">
+      <div class="modern-card-header">
+        <h4 class="mb-0">
+          <i class="bi bi-bag-check"></i> Resumen de Pedido
+        </h4>
+      </div>
+      
+      <div class="modern-card-body">
+        <div style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
+          {% for it in items %}
+          <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: between; align-items: center; gap: 1rem;">
+            <div style="flex-grow: 1;">
+              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">{{ it.product.name }}</div>
+              <div style="color: var(--text-secondary); font-size: 0.9rem;">Cantidad: {{ it.quantity }}</div>
+            </div>
+            <div style="font-weight: 700; color: var(--pri-blue); font-size: 1.1rem;">
+              ${{ it.line_total }}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        
+        <div style="padding: 1.5rem 0; border-top: 2px solid var(--border-color); margin-top: 1rem;">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="color: var(--text-secondary);">Subtotal</span>
+            <span style="font-weight: 600; color: var(--text-primary);">${{ total }}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="color: var(--text-secondary);">Envío</span>
+            <span style="color: #10b981; font-weight: 600;">
+              <i class="bi bi-check-circle"></i> Gratis
+            </span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center pt-3 mt-3" style="border-top: 1px solid var(--border-color);">
+            <span style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">Total</span>
+            <span style="font-size: 2rem; font-weight: 900; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+              ${{ total }}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
+
+<style>
+  .sticky-top {
+    position: sticky;
+  }
+</style>
 {% endblock %}
 

@@ -1,45 +1,173 @@
 {% extends 'base.html' %}
-{% block title %}{{ product.name }} - PRI Shop{% endblock %}
-{% block content %}
-<div class="row">
-  <div class="col-md-5">
-    {% if product.image %}
-    <img class="img-fluid rounded" src="{{ product.image.url }}" alt="{{ product.name }}">
-    {% else %}
-    <div class="bg-light rounded" style="height: 300px;"></div>
-    {% endif %}
-  </div>
-  <div class="col-md-7">
-    <h2>{{ product.name }}</h2>
-    <p class="text-muted">{{ product.category.name }}</p>
-    <p>{{ product.description }}</p>
-    <p class="h4">${{ product.price }}</p>
-    <form method="post" action="{% url 'cart:add' product.id %}">{% csrf_token %}
-      <div class="input-group" style="max-width: 200px;">
-        <input type="number" min="1" name="quantity" value="1" class="form-control">
-        <button class="btn btn-primary">Agregar</button>
-      </div>
-    </form>
-  </div>
-</div>
+{% block title %}{{ product.name }} - PRI{% endblock %}
 
-<hr class="my-4">
-<h4>Productos similares</h4>
-<div class="row">
-  {% for p in similar %}
-  <div class="col-md-3 mb-3">
-    <div class="card h-100">
-      {% if p.image %}<img class="card-img-top" src="{{ p.image.url }}" alt="{{ p.name }}">{% endif %}
-      <div class="card-body d-flex flex-column">
-        <a class="stretched-link text-decoration-none" href="{% url 'catalog:product_detail' p.slug %}"><h6 class="card-title">{{ p.name }}</h6></a>
-        <p class="text-muted small mb-2">{{ p.category.name }}</p>
-        <p class="fw-bold mt-auto">${{ p.price }}</p>
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb" style="background: transparent; padding: 0;">
+    <li class="breadcrumb-item"><a href="/shop/" style="color: var(--cursia-blue);"><i class="bi bi-house-door"></i> Productos</a></li>
+    <li class="breadcrumb-item"><a href="/shop/?category={{ product.category.slug }}" style="color: var(--cursia-blue);">{{ product.category.name }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+  </ol>
+</nav>
+
+<div class="row g-4">
+  <!-- Imagen del producto -->
+  <div class="col-lg-6">
+    <div class="modern-card" style="overflow: hidden;">
+      {% if product.image %}
+        <img class="w-100" src="{{ product.image.url }}" alt="{{ product.name }}" style="object-fit: cover; max-height: 500px;">
+      {% else %}
+        <div style="background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); height: 500px; display: flex; align-items: center; justify-content: center; color: white; font-size: 5rem;">
+          <i class="bi bi-image"></i>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Información del producto -->
+  <div class="col-lg-6">
+    <div class="modern-card">
+      <div class="modern-card-body">
+        <!-- Categoría Badge -->
+        <div class="mb-3">
+          <span class="modern-badge badge-primary">
+            <i class="bi bi-tag-fill"></i> {{ product.category.name }}
+          </span>
+          {% if product.stock < 10 %}
+            <span class="modern-badge badge-danger ms-2">
+              <i class="bi bi-exclamation-triangle"></i> Pocas unidades
+            </span>
+          {% endif %}
+        </div>
+        
+        <!-- Título -->
+        <h1 class="mb-3" style="font-size: 2.5rem; font-weight: 800; line-height: 1.2;">
+          {{ product.name }}
+        </h1>
+        
+        <!-- Descripción -->
+        <p style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.8; margin-bottom: 2rem;">
+          {{ product.description }}
+        </p>
+        
+        <!-- Precio -->
+        <div class="mb-4" style="padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-lg); border-left: 4px solid var(--cursia-blue);">
+          <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
+            Precio
+          </div>
+          <div style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            ${{ product.price }}
+          </div>
+        </div>
+        
+        <!-- Stock Info -->
+        <div class="mb-4" style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius-md);">
+          <i class="bi bi-box-seam" style="font-size: 1.5rem; color: var(--cursia-blue);"></i>
+          <div>
+            <div style="font-weight: 600; color: var(--text-primary);">Disponibilidad</div>
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+              {% if product.stock > 10 %}
+                <span style="color: #10b981;"><i class="bi bi-check-circle-fill"></i> En stock ({{ product.stock }} unidades)</span>
+              {% elif product.stock > 0 %}
+                <span style="color: #f59e0b;"><i class="bi bi-exclamation-circle-fill"></i> Pocas unidades ({{ product.stock }} disponibles)</span>
+              {% else %}
+                <span style="color: #ef4444;"><i class="bi bi-x-circle-fill"></i> Agotado</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Agregar al carrito -->
+        {% if product.stock > 0 %}
+        <form method="post" action="{% url 'cart:add' product.id %}">
+          {% csrf_token %}
+          <div class="modern-form-group">
+            <label class="modern-form-label">
+              <i class="bi bi-123"></i> Cantidad
+            </label>
+            <div class="d-flex gap-3">
+              <input type="number" min="1" max="{{ product.stock }}" name="quantity" value="1" class="modern-form-control" style="max-width: 120px;">
+              <button type="submit" class="btn-modern btn-primary-modern flex-grow-1" style="font-size: 1.1rem;">
+                <i class="bi bi-cart-plus-fill"></i>
+                Agregar al carrito
+              </button>
+            </div>
+          </div>
+        </form>
+        {% else %}
+        <button disabled class="btn-modern w-100" style="background: #cbd5e1; color: #64748b; cursor: not-allowed;">
+          <i class="bi bi-x-circle"></i> Producto agotado
+        </button>
+        {% endif %}
+        
+        <!-- Características adicionales -->
+        <div class="mt-4 pt-4" style="border-top: 1px solid var(--border-color);">
+          <div class="row g-3 text-center">
+            <div class="col-4">
+              <div style="font-size: 1.5rem; color: var(--cursia-blue); margin-bottom: 0.25rem;">
+                <i class="bi bi-truck"></i>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Envío rápido</div>
+            </div>
+            <div class="col-4">
+              <div style="font-size: 1.5rem; color: var(--cursia-blue); margin-bottom: 0.25rem;">
+                <i class="bi bi-shield-check"></i>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Compra segura</div>
+            </div>
+            <div class="col-4">
+              <div style="font-size: 1.5rem; color: var(--cursia-blue); margin-bottom: 0.25rem;">
+                <i class="bi bi-arrow-clockwise"></i>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Devoluciones</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  {% empty %}
-  <p>No hay productos similares.</p>
-  {% endfor %}
+</div>
+
+<!-- Productos similares -->
+<div class="mt-5">
+  <h2 class="mb-4">
+    <span class="text-gradient">Productos Similares</span>
+  </h2>
+  
+  <div class="products-grid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+    {% for p in similar %}
+    <div class="product-card">
+      <div class="product-image-container">
+        {% if p.image %}
+          <img class="product-image" src="{{ p.image.url }}" alt="{{ p.name }}">
+        {% else %}
+          <div class="product-image" style="background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem;">
+            <i class="bi bi-image"></i>
+          </div>
+        {% endif %}
+      </div>
+      
+      <div class="product-content">
+        <div class="product-category">
+          <i class="bi bi-tag-fill"></i> {{ p.category.name }}
+        </div>
+        <h3 class="product-title">{{ p.name }}</h3>
+        
+        <div class="product-footer mt-3">
+          <div class="product-price">${{ p.price }}</div>
+          <a href="{% url 'catalog:product_detail' p.slug %}" class="btn-modern btn-secondary-modern" style="padding: 0.5rem 1rem;">
+            <i class="bi bi-eye"></i> Ver
+          </a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <p class="text-muted text-center">No hay productos similares disponibles.</p>
+    </div>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}
 

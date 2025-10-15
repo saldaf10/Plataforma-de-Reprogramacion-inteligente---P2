@@ -1,26 +1,219 @@
 {% extends 'base.html' %}
-{% block title %}Pedido #{{ order.id }} - PRI Shop{% endblock %}
-{% block content %}
-<div class="card card-body">
-  <h4>¡Pago exitoso! Pedido #{{ order.id }}</h4>
-  <p>Gracias por tu compra, {{ order.full_name }}.</p>
-  <h6 class="mt-3">Artículos</h6>
-  <ul class="list-group list-group-flush">
-    {% for it in order.items.all %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-      <span>{{ it.product.name }} x {{ it.quantity }}</span>
-      <strong>${{ it.get_line_total }}</strong>
-    </li>
-    {% endfor %}
-  </ul>
-  <div class="d-flex justify-content-between mt-3">
-    <span>Total</span>
-    <strong>${{ order.total_amount }}</strong>
-  </div>
-  <div class="mt-3">
-    <a class="btn btn-primary" href="/">Seguir comprando</a>
-    <a class="btn btn-outline-secondary" href="/pri/">Ir al módulo PRI</a>
-  </div>
-</div>
-{% endblock %}
+{% block title %}¡Pago Exitoso! - PRI{% endblock %}
 
+{% block content %}
+<!-- Mensaje de Éxito Principal -->
+<div class="text-center mb-4" style="animation: fadeInDown 0.5s ease-out;">
+    <div style="width: 120px; height: 120px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);">
+        <i class="bi bi-check-circle-fill" style="font-size: 4rem; color: white;"></i>
+    </div>
+    
+    <h1 style="color: var(--text-primary); font-weight: 900; margin-bottom: 0.5rem;">
+        ¡Pago Exitoso!
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 1.2rem;">
+        Gracias por tu compra, <strong style="color: var(--pri-blue);">{{ order.full_name }}</strong>
+    </p>
+</div>
+
+<div class="row g-4">
+    <!-- Información del Pedido -->
+    <div class="col-lg-8">
+        <div class="modern-card mb-4">
+            <div class="modern-card-header" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);">
+                <h4 class="mb-0" style="color: var(--text-primary);">
+                    <i class="bi bi-receipt"></i> Detalles del Pedido #{{ order.id }}
+                </h4>
+            </div>
+            
+            <div class="modern-card-body" style="padding: 0;">
+                {% for it in order.items.all %}
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                    <div style="flex-grow: 1;">
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem; margin-bottom: 0.25rem;">
+                            <i class="bi bi-box"></i> {{ it.product.name }}
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.95rem;">
+                            Cantidad: <strong>{{ it.quantity }}</strong> × ${{ it.price }}
+                        </div>
+                    </div>
+                    <div style="font-weight: 800; color: var(--pri-blue); font-size: 1.5rem;">
+                        ${{ it.get_line_total }}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Total -->
+                <div style="padding: 2rem; background: var(--bg-secondary);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">Total Pagado</span>
+                        <span style="font-size: 2.5rem; font-weight: 900; background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            ${{ order.total_amount }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información de Entrega -->
+        <div class="modern-card">
+            <div class="modern-card-header">
+                <h4 class="mb-0" style="color: var(--text-primary);">
+                    <i class="bi bi-truck"></i> Información de Entrega
+                </h4>
+            </div>
+            
+            <div class="modern-card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                                <i class="bi bi-geo-alt"></i> Dirección de Entrega
+                            </div>
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 1rem;">
+                                {{ order.address }}
+                            </div>
+                            <div style="color: var(--text-secondary);">
+                                {{ order.city }}, {{ order.postal_code }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                                <i class="bi bi-envelope"></i> Email de Contacto
+                            </div>
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 1rem;">
+                                {{ order.email }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Próximos Pasos -->
+    <div class="col-lg-4">
+        <!-- Estado del Pedido -->
+        <div class="modern-card mb-4" style="border-left: 4px solid #10b981;">
+            <div class="modern-card-body">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="width: 80px; height: 80px; margin: 0 auto 1rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-check-circle" style="font-size: 2.5rem; color: #10b981;"></i>
+                    </div>
+                    <span class="modern-badge badge-success" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                        <i class="bi bi-check-circle"></i> Pedido Confirmado
+                    </span>
+                </div>
+                
+                <h5 style="color: var(--text-primary); font-weight: 700; margin-bottom: 1rem; text-align: center;">
+                    ¿Qué sigue?
+                </h5>
+                
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; align-items: start; gap: 1rem;">
+                        <div style="width: 32px; height: 32px; background: var(--pri-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; flex-shrink: 0;">
+                            1
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Asignación de Repartidor</div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">Tu pedido será asignado a un repartidor disponible</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: start; gap: 1rem;">
+                        <div style="width: 32px; height: 32px; background: var(--pri-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; flex-shrink: 0;">
+                            2
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Preparación</div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">Prepararemos tu pedido para el envío</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: start; gap: 1rem;">
+                        <div style="width: 32px; height: 32px; background: var(--pri-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; flex-shrink: 0;">
+                            3
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">En Camino</div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">Recibirás notificaciones cuando esté en ruta</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: start; gap: 1rem;">
+                        <div style="width: 32px; height: 32px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; flex-shrink: 0;">
+                            <i class="bi bi-check"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Entrega</div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">Tu pedido llegará a tu puerta</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Acciones -->
+        <div class="modern-card">
+            <div class="modern-card-body">
+                <h5 style="color: var(--text-primary); font-weight: 700; margin-bottom: 1rem;">
+                    Acciones Rápidas
+                </h5>
+                
+                <div class="d-grid gap-2">
+                    <a href="/orders/my-orders/" class="btn-modern btn-primary-modern">
+                        <i class="bi bi-box-seam"></i>
+                        Ver Mis Pedidos
+                    </a>
+                    <a href="/shop/" class="btn-modern btn-secondary-modern">
+                        <i class="bi bi-shop"></i>
+                        Seguir Comprando
+                    </a>
+                    <a href="/" class="btn-modern btn-secondary-modern">
+                        <i class="bi bi-house"></i>
+                        Ir al Inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Información Adicional -->
+<div class="modern-card mt-4" style="background: linear-gradient(135deg, rgba(1, 201, 255, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);">
+    <div class="modern-card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 style="color: var(--text-primary); font-weight: 700; margin-bottom: 0.5rem;">
+                    <i class="bi bi-bell"></i> Mantente Informado
+                </h5>
+                <p style="color: var(--text-secondary); margin-bottom: 0;">
+                    Recibirás notificaciones por correo electrónico y en tu cuenta sobre el estado de tu pedido. 
+                    También puedes rastrear tu entrega en tiempo real desde <a href="/orders/my-orders/" style="color: var(--pri-blue); font-weight: 600;">Mis Pedidos</a>.
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <a href="/orders/notifications/" class="btn-modern btn-secondary-modern">
+                    <i class="bi bi-bell"></i> Ver Notificaciones
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+{% endblock %}

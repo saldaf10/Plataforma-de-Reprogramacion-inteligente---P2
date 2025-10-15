@@ -4,72 +4,166 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Ecommerce PRI{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>{% block title %}PRI - Plataforma de Reprogramación Inteligente{% endblock %}</title>
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root { --primary-blue: #01c9ff; --dark-blue: #0066cc; }
-        body { font-family: 'Inter', sans-serif; }
-        .navbar-brand { font-weight: 700; }
-        .btn-primary { background: var(--primary-blue); border: none; }
-        .btn-primary:hover { background: var(--dark-blue); }
-    </style>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Custom Modern Styles -->
+    <link rel="stylesheet" href="{% static 'css/modern-style.css' %}">
+    
     {% block head %}{% endblock %}
     {% block extra_css %}{% endblock %}
-  </head>
-  <body>
-    <nav class="navbar navbar-expand-lg navbar-dark" style="background: var(--primary-blue)">
-      <div class="container">
-        <a class="navbar-brand" href="/">PRI Shop</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div id="nav" class="collapse navbar-collapse">
-          <ul class="navbar-nav me-auto">
-            {% if user.is_authenticated %}
-              {% if user.profile.role == 'cliente' %}
-                <li class="nav-item"><a class="nav-link" href="/shop/">Productos</a></li>
-                <li class="nav-item"><a class="nav-link" href="/cart/">Carrito</a></li>
-              {% endif %}
-            {% else %}
-              <li class="nav-item"><a class="nav-link" href="/shop/">Productos</a></li>
-              <li class="nav-item"><a class="nav-link" href="/cart/">Carrito</a></li>
-            {% endif %}
-            {% if user.is_authenticated %}
-              {% if user.is_superuser or user.profile.role == 'manager' %}
-                <li class="nav-item"><a class="nav-link" href="/orders/panel/">Panel</a></li>
-              {% elif user.profile.role == 'repartidor' %}
-                <li class="nav-item"><a class="nav-link" href="/orders/my-orders/">Historial de pedidos</a></li>
-              {% elif user.profile.role == 'cliente' %}
-                <li class="nav-item"><a class="nav-link" href="/orders/my-orders/">Mis pedidos</a></li>
-                <li class="nav-item"><a class="nav-link" href="/orders/notifications/">📱 Notificaciones</a></li>
-              {% endif %}
-            {% endif %}
-            {% if user.is_superuser %}
-              <li class="nav-item"><a class="nav-link" href="/accounts/manage-roles/">Gestionar roles</a></li>
-            {% endif %}
-          </ul>
-          <ul class="navbar-nav">
-            {% if user.is_authenticated %}
-              <li class="nav-item"><a class="nav-link" href="/accounts/profile/">Perfil</a></li>
-              <li class="nav-item"><a class="nav-link" href="/accounts/logout/">Salir</a></li>
-            {% else %}
-              <li class="nav-item"><a class="nav-link" href="/accounts/login/">Entrar</a></li>
-              <li class="nav-item"><a class="nav-link" href="/accounts/signup/">Crear cuenta</a></li>
-            {% endif %}
-          </ul>
+</head>
+<body>
+    <!-- Modern Navbar - Always Visible -->
+    <nav class="modern-navbar">
+        <div class="container-fluid">
+            <div class="d-flex align-items-center justify-content-between w-100">
+                <!-- Brand -->
+                <a class="navbar-brand-modern" href="/">
+                    <span class="brand-icon">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </span>
+                    <span style="color: white; font-weight: 700;">PRI</span>
+                </a>
+                
+                <!-- Navigation Links - Always Visible -->
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                    {% if user.is_authenticated %}
+                        {% if user.profile.role == 'cliente' or not user.profile %}
+                            <a class="modern-nav-link-compact" href="/shop/" title="Productos">
+                                <i class="bi bi-shop"></i>
+                                <span class="d-none d-lg-inline">Productos</span>
+                            </a>
+                            <a class="modern-nav-link-compact" href="/cart/" title="Carrito">
+                                <i class="bi bi-cart3"></i>
+                                <span class="d-none d-lg-inline">Carrito</span>
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a class="modern-nav-link-compact" href="/shop/" title="Productos">
+                            <i class="bi bi-shop"></i>
+                            <span class="d-none d-lg-inline">Productos</span>
+                        </a>
+                        <a class="modern-nav-link-compact" href="/cart/" title="Carrito">
+                            <i class="bi bi-cart3"></i>
+                            <span class="d-none d-lg-inline">Carrito</span>
+                        </a>
+                    {% endif %}
+                    
+                    {% if user.is_authenticated %}
+                        {% if user.is_superuser or user.profile.role == 'manager' %}
+                            <a class="modern-nav-link-compact" href="/orders/panel/" title="Panel de Administración">
+                                <i class="bi bi-speedometer2"></i>
+                                <span class="d-none d-lg-inline">Panel</span>
+                            </a>
+                        {% elif user.profile.role == 'repartidor' %}
+                            <a class="modern-nav-link-compact" href="/orders/my-orders/" title="Mis Entregas">
+                                <i class="bi bi-truck"></i>
+                                <span class="d-none d-lg-inline">Entregas</span>
+                            </a>
+                            <a class="modern-nav-link-compact" href="/orders/notifications/" title="Notificaciones">
+                                <i class="bi bi-bell"></i>
+                                <span class="d-none d-lg-inline">Notificaciones</span>
+                            </a>
+                        {% elif user.profile.role == 'cliente' %}
+                            <a class="modern-nav-link-compact" href="/orders/my-orders/" title="Mis Pedidos">
+                                <i class="bi bi-box-seam"></i>
+                                <span class="d-none d-lg-inline">Mis Pedidos</span>
+                            </a>
+                            <a class="modern-nav-link-compact" href="/orders/notifications/" title="Notificaciones">
+                                <i class="bi bi-bell"></i>
+                                <span class="d-none d-lg-inline">Notificaciones</span>
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if user.is_superuser %}
+                        <a class="modern-nav-link-compact" href="/accounts/manage-roles/" title="Gestionar Roles">
+                            <i class="bi bi-person-gear"></i>
+                            <span class="d-none d-lg-inline">Roles</span>
+                        </a>
+                    {% endif %}
+                    
+                    <!-- User Actions -->
+                    {% if user.is_authenticated %}
+                        <div class="vr" style="border-left: 1px solid rgba(255,255,255,0.2); height: 24px; margin: 0 0.5rem;"></div>
+                        <a class="modern-nav-link-compact" href="/accounts/profile/" title="Mi Perfil">
+                            <i class="bi bi-person-circle"></i>
+                            <span class="d-none d-lg-inline">{{ user.username }}</span>
+                        </a>
+                        <a class="modern-nav-link-compact" href="/accounts/logout/" title="Cerrar Sesión">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span class="d-none d-lg-inline">Salir</span>
+                        </a>
+                    {% else %}
+                        <div class="vr" style="border-left: 1px solid rgba(255,255,255,0.2); height: 24px; margin: 0 0.5rem;"></div>
+                        <a class="modern-nav-link-compact" href="/accounts/login/" title="Iniciar Sesión">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <span class="d-none d-lg-inline">Entrar</span>
+                        </a>
+                        <a class="modern-nav-link-compact" href="/accounts/signup/" title="Crear Cuenta">
+                            <i class="bi bi-person-plus"></i>
+                            <span class="d-none d-lg-inline">Crear cuenta</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-      </div>
     </nav>
 
-    <main class="container py-4">
-      {% block content %}{% endblock %}
+    <!-- Main Content -->
+    <main class="main-container fade-in">
+        <!-- Messages -->
+        {% if messages %}
+            <div class="messages-container mb-4">
+                {% for message in messages %}
+                    <div class="modern-alert modern-alert-{{ message.tags|default:'info' }}" role="alert">
+                        <span class="modern-alert-icon">
+                            {% if message.tags == 'success' %}
+                                <i class="bi bi-check-circle-fill"></i>
+                            {% elif message.tags == 'error' %}
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            {% elif message.tags == 'warning' %}
+                                <i class="bi bi-exclamation-circle-fill"></i>
+                            {% else %}
+                                <i class="bi bi-info-circle-fill"></i>
+                            {% endif %}
+                        </span>
+                        <div>{{ message }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        {% block content %}{% endblock %}
     </main>
 
+    <!-- Footer -->
+    <footer style="background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); color: white; padding: 2rem 0; margin-top: 4rem;">
+        <div class="container text-center">
+            <p style="margin: 0; opacity: 0.9; font-size: 0.95rem;">
+                &copy; 2025 <span style="color: white; font-weight: 700;">PRI</span> - Plataforma de Reprogramación Inteligente
+            </p>
+            <p style="margin: 0.5rem 0 0 0; opacity: 0.8; font-size: 0.85rem;">
+                Proyecto Integrador 2
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}{% endblock %}
-  </body>
-  </html>
+</body>
+</html>
 
 

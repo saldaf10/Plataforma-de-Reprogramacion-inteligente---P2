@@ -1,148 +1,328 @@
 {% extends 'base.html' %}
-{% block title %}Gestionar entrega #{{ order.id }}{% endblock %}
+{% block title %}Gestionar entrega #{{ order.id }} - PRI{% endblock %}
+
 {% block content %}
-<h3>Gestionar entrega — Pedido #{{ order.id }}</h3>
-<div class="row">
-  <div class="col-md-6">
-    <div class="card card-body mb-3">
-      <h6>Estado actual: <span class="badge bg-secondary">{{ delivery.get_status_display }}</span></h6>
-      {% if is_modifiable %}
-      <form method="post" class="mt-3">{% csrf_token %}
-        <input type="hidden" name="action" value="assign">
-        <div class="mb-2">
-          <label class="form-label">Asignar repartidor</label>
-          <select class="form-select" name="rider_id">
-            <option value="">Seleccionar</option>
-            {% for r in riders %}
-            <option value="{{ r.id }}" {% if delivery.rider_id == r.id %}selected{% endif %}>{{ r.username }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="row g-2">
-          <div class="col-md-6">
-            <label class="form-label">Fecha programada</label>
-            <input type="date" class="form-control" name="scheduled_date" value="{{ delivery.scheduled_date|date:'Y-m-d' }}">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Franja horaria</label>
-            <input type="text" class="form-control" name="scheduled_window" placeholder="14:00-16:00" value="{{ delivery.scheduled_window }}">
-          </div>
-        </div>
-        <div class="d-grid">
-          <button class="btn btn-primary">Actualizar asignación</button>
-        </div>
-      </form>
-      {% else %}
-      <div class="alert alert-warning mt-3">
-        <h6><i class="bi bi-lock"></i> Pedido Bloqueado</h6>
-        <p class="mb-0">Este pedido no puede ser modificado porque está en estado final ({{ delivery.get_status_display }}).</p>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-  <div class="col-md-6">
-    <div class="card card-body">
-      <h6>Resumen de compra</h6>
-      <ul class="list-group list-group-flush">
-        {% for it in order.items.all %}
-        <li class="list-group-item d-flex justify-content-between">
-          <span>{{ it.product.name }} x {{ it.quantity }}</span>
-          <strong>${{ it.get_line_total }}</strong>
-        </li>
-        {% endfor %}
-      </ul>
-      <div class="d-flex justify-content-between mt-3">
-        <span>Total</span>
-        <strong>${{ order.total_amount }}</strong>
-      </div>
-    </div>
-  </div>
-</div>
+<h2 class="mb-4">
+  <span class="text-gradient">
+    <i class="bi bi-gear"></i> Gestionar Entrega — Pedido #{{ order.id }}
+  </span>
+</h2>
 
-<div class="row mt-3">
-  <div class="col-12">
-    <div class="card card-body">
-      <h6>Historial de eventos</h6>
-      <div class="table-responsive">
-        <table class="table table-sm align-middle">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Usuario</th>
-              <th>De</th>
-              <th>A</th>
-              <th>Notas</th>
-              <th>Foto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for e in delivery.events.all %}
-            <tr>
-              <td>{{ e.created_at|date:"d/m/Y H:i" }}</td>
-              <td>{% if e.user %}{{ e.user.username }}{% else %}-{% endif %}</td>
-              <td>{{ e.status_before }}</td>
-              <td>{{ e.status_after }}</td>
-              <td>{{ e.notes|default:"-" }}</td>
-              <td>
-                {% if e.photo %}
-                  <img src="{{ e.photo.url }}" alt="foto" style="height:40px;" class="rounded cursor-pointer" 
-                       data-bs-toggle="modal" data-bs-target="#imageModal" 
-                       onclick="showImageModal('{{ e.photo.url }}', 'Evento del {{ e.created_at|date:"d/m/Y H:i" }}')">
-                {% else %}-{% endif %}
-              </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6">Sin eventos registrados.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+<div class="row g-4">
+  <!-- Sección de Asignación y Estado -->
+  <div class="col-lg-6">
+    <div class="modern-card">
+      <div class="modern-card-header">
+        <h4 class="mb-0" style="color: var(--text-primary);">
+          <i class="bi bi-truck"></i> Estado y Asignación
+        </h4>
       </div>
-    </div>
-  </div>
-</div>
-
-<div class="row mt-3">
-  <div class="col-12">
-    <div class="card card-body">
-      <h6>Comentarios</h6>
-      {% if is_modifiable %}
-      <form method="post" enctype="multipart/form-data" class="row g-2 mb-3">{% csrf_token %}
-        <input type="hidden" name="action" value="manager_comment">
-        <div class="col-md-8">
-          <input class="form-control" name="message" placeholder="Añadir comentario para el pedido">
+      
+      <div class="modern-card-body">
+        <!-- Estado Actual -->
+        <div class="mb-3">
+          <label style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; display: block;">
+            Estado Actual
+          </label>
+          {% if delivery.status == 'entregada' %}
+            <span class="modern-badge badge-success" style="font-size: 1rem; padding: 0.5rem 1rem;">
+              <i class="bi bi-check-circle"></i> {{ delivery.get_status_display }}
+            </span>
+          {% elif delivery.status == 'fallida' %}
+            <span class="modern-badge badge-danger" style="font-size: 1rem; padding: 0.5rem 1rem;">
+              <i class="bi bi-x-circle"></i> {{ delivery.get_status_display }}
+            </span>
+          {% elif delivery.status == 'en_ruta' %}
+            <span class="modern-badge" style="background: #01c9ff; color: white; font-size: 1rem; padding: 0.5rem 1rem;">
+              <i class="bi bi-truck"></i> {{ delivery.get_status_display }}
+            </span>
+          {% else %}
+            <span class="modern-badge badge-secondary" style="font-size: 1rem; padding: 0.5rem 1rem;">
+              {{ delivery.get_status_display }}
+            </span>
+          {% endif %}
         </div>
-        <div class="col-md-3">
-          <input class="form-control" type="file" name="photo" accept="image/*">
+        
+            <!-- Hora Estimada - Rediseñada -->
+            <div style="background: linear-gradient(135deg, rgba(1, 201, 255, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%); border: 1px solid var(--pri-blue); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--pri-blue) 0%, var(--pri-purple) 100%); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0;">
+                  <i class="bi bi-clock-fill"></i>
+                </div>
+                <div style="flex-grow: 1;">
+                  <div style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pri-blue); margin-bottom: 0.25rem;">
+                    Hora Estimada de Entrega
+                  </div>
+                  <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary);">
+                    {{ delivery.estimated_datetime|date:"d/m/Y H:i" }}
+                  </div>
+                </div>
+              </div>
+            </div>
+        
+        {% if delivery.scheduled_date %}
+        <div class="mb-3" style="padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius-md); border-left: 3px solid var(--pri-blue);">
+          <i class="bi bi-calendar-check" style="color: var(--pri-blue);"></i>
+          <strong style="color: var(--text-primary);">Programado:</strong>
+          <span style="color: var(--text-primary);">{{ delivery.scheduled_date }}</span>
+          {% if delivery.scheduled_window %}
+            <span style="color: var(--pri-blue); font-weight: 600;">({{ delivery.scheduled_window }})</span>
+          {% endif %}
         </div>
-        <div class="col-md-1 d-grid">
-          <button class="btn btn-primary">Añadir</button>
-        </div>
-      </form>
-      {% else %}
-      <div class="alert alert-info mb-3">
-        <i class="bi bi-info-circle"></i> Los comentarios están deshabilitados para pedidos en estado final.
-      </div>
-      {% endif %}
-      <ul class="list-group list-group-flush">
-        {% for c in comments %}
-        <li class="list-group-item">
-          <div class="d-flex justify-content-between">
-            <div>
-              <strong>{% if c.user %}{{ c.user.username }}{% else %}Anónimo{% endif %}</strong>
-              <small class="text-muted"> — {{ c.role|capfirst }} — {{ c.created_at|date:"d/m/Y H:i" }}</small>
+        {% endif %}
+        
+        <!-- Formulario de Asignación -->
+        {% if is_modifiable %}
+        <form method="post" class="mt-4">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="assign">
+          
+          <div class="modern-form-group">
+            <label class="modern-form-label">
+              <i class="bi bi-person-check"></i> Asignar Repartidor
+            </label>
+            <select class="modern-form-control" name="rider_id">
+              <option value="">Seleccionar repartidor</option>
+              {% for r in riders %}
+              <option value="{{ r.id }}" {% if delivery.rider_id == r.id %}selected{% endif %}>{{ r.username }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="modern-form-group">
+                <label class="modern-form-label">
+                  <i class="bi bi-calendar"></i> Fecha Programada
+                </label>
+                <input type="date" class="modern-form-control" name="scheduled_date" value="{{ delivery.scheduled_date|date:'Y-m-d' }}">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="modern-form-group">
+                <label class="modern-form-label">
+                  <i class="bi bi-clock"></i> Franja Horaria
+                </label>
+                <input type="text" class="modern-form-control" name="scheduled_window" placeholder="14:00-16:00" value="{{ delivery.scheduled_window }}">
+              </div>
             </div>
           </div>
-          <div class="mt-1">{{ c.message }}</div>
-          {% if c.photo %}
-            <img src="{{ c.photo.url }}" class="rounded mt-2 cursor-pointer" style="max-height:100px;" 
-                 data-bs-toggle="modal" data-bs-target="#imageModal" 
-                 onclick="showImageModal('{{ c.photo.url }}', 'Comentario del {{ c.created_at|date:"d/m/Y H:i" }}')">
-          {% endif %}
-        </li>
-        {% empty %}
-        <li class="list-group-item">Sin comentarios.</li>
-        {% endfor %}
-      </ul>
+          
+          <button type="submit" class="btn-modern btn-primary-modern w-100 mt-3">
+            <i class="bi bi-check-circle"></i>
+            Actualizar Asignación
+          </button>
+        </form>
+        {% else %}
+        <div class="modern-alert modern-alert-warning mt-3">
+          <span class="modern-alert-icon">
+            <i class="bi bi-lock"></i>
+          </span>
+          <div>
+            <strong style="color: var(--text-primary);">Pedido Bloqueado</strong>
+            <p class="mb-0" style="color: var(--text-primary);">Este pedido no puede ser modificado porque está en estado final ({{ delivery.get_status_display }}).</p>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Resumen de Compra -->
+  <div class="col-lg-6">
+    <div class="modern-card">
+      <div class="modern-card-header">
+        <h4 class="mb-0" style="color: var(--text-primary);">
+          <i class="bi bi-bag-check"></i> Resumen de Compra
+        </h4>
+      </div>
+      
+      <div class="modern-card-body">
+        <div style="max-height: 400px; overflow-y: auto;">
+          {% for it in order.items.all %}
+          <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: between; align-items: center; gap: 1rem;">
+            <div style="flex-grow: 1;">
+              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">{{ it.product.name }}</div>
+              <div style="color: var(--text-secondary); font-size: 0.9rem;">Cantidad: {{ it.quantity }}</div>
+            </div>
+            <div style="font-weight: 700; color: var(--pri-blue); font-size: 1.1rem;">
+              ${{ it.get_line_total }}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        
+        <div style="padding: 1.5rem 0; border-top: 2px solid var(--border-color); margin-top: 1rem;">
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">Total</span>
+            <span style="font-size: 2rem; font-weight: 900; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+              ${{ order.total_amount }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Historial de Eventos -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="modern-card">
+      <div class="modern-card-header">
+        <h4 class="mb-0" style="color: var(--text-primary);">
+          <i class="bi bi-clock-history"></i> Historial de Eventos
+        </h4>
+      </div>
+      
+      <div class="modern-card-body" style="padding: 0;">
+        <div class="table-responsive">
+          <table class="modern-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Usuario</th>
+                <th>De</th>
+                <th>A</th>
+                <th>Notas</th>
+                <th>Foto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for e in events %}
+              <tr>
+                <td style="color: var(--text-primary); font-weight: 500;">{{ e.created_at|date:"d/m/Y H:i" }}</td>
+                <td style="color: var(--text-primary); font-weight: 500;">
+                  {% if e.user %}
+                    <i class="bi bi-person"></i> {{ e.user.username }}
+                  {% else %}
+                    <span style="color: var(--text-muted);">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if e.status_before %}
+                    <span style="color: var(--text-secondary);">{{ e.status_before }}</span>
+                  {% else %}
+                    <span style="color: var(--text-muted);">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if e.status_after %}
+                    <span style="color: var(--pri-blue); font-weight: 600;">{{ e.status_after }}</span>
+                  {% else %}
+                    <span style="color: var(--text-muted);">-</span>
+                  {% endif %}
+                </td>
+                <td style="color: var(--text-primary);">{{ e.notes|default:"-" }}</td>
+                <td>
+                  {% if e.photo %}
+                    <img src="{{ e.photo.url }}" alt="foto" style="height:40px; border-radius: var(--radius-md); cursor: pointer;" 
+                         data-bs-toggle="modal" data-bs-target="#imageModal" 
+                         onclick="showImageModal('{{ e.photo.url }}', 'Evento del {{ e.created_at|date:"d/m/Y H:i" }}')">
+                  {% else %}
+                    <span style="color: var(--text-muted);">-</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center" style="padding: 2rem; color: var(--text-muted);">
+                  <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+                  Sin eventos registrados
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Comentarios -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="modern-card">
+      <div class="modern-card-header">
+        <h4 class="mb-0" style="color: var(--text-primary);">
+          <i class="bi bi-chat-left-text"></i> Comentarios
+        </h4>
+      </div>
+      
+      <div class="modern-card-body">
+        {% if is_modifiable %}
+        <form method="post" enctype="multipart/form-data" class="mb-4">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="manager_comment">
+          
+          <div class="row g-3">
+            <div class="col-md-8">
+              <div class="modern-form-group">
+                <label class="modern-form-label">
+                  <i class="bi bi-chat-dots"></i> Mensaje
+                </label>
+                <input class="modern-form-control" name="message" placeholder="Añadir comentario para el pedido">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="modern-form-group">
+                <label class="modern-form-label">
+                  <i class="bi bi-image"></i> Foto (opcional)
+                </label>
+                <input class="modern-form-control" type="file" name="photo" accept="image/*">
+              </div>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn-modern btn-primary-modern">
+            <i class="bi bi-plus-circle"></i>
+            Añadir Comentario
+          </button>
+        </form>
+        {% else %}
+        <div class="modern-alert modern-alert-info mb-4">
+          <span class="modern-alert-icon">
+            <i class="bi bi-info-circle"></i>
+          </span>
+          <div>
+            <strong style="color: var(--text-primary);">Comentarios Deshabilitados</strong>
+            <p class="mb-0" style="color: var(--text-primary);">Los comentarios están deshabilitados para pedidos en estado final.</p>
+          </div>
+        </div>
+        {% endif %}
+        
+        <!-- Lista de Comentarios -->
+        <div>
+          {% for c in comments %}
+          <div style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-lg); margin-bottom: 1rem; background: var(--bg-secondary);">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+                  <i class="bi bi-person-circle"></i>
+                  {% if c.user %}{{ c.user.username }}{% else %}Anónimo{% endif %}
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                  <span class="modern-badge badge-secondary" style="font-size: 0.75rem;">{{ c.role|capfirst }}</span>
+                  <span style="margin-left: 0.5rem;">{{ c.created_at|date:"d/m/Y H:i" }}</span>
+                </div>
+              </div>
+            </div>
+            <div style="color: var(--text-primary); line-height: 1.6; margin-top: 1rem;">{{ c.message }}</div>
+            {% if c.photo %}
+              <img src="{{ c.photo.url }}" style="max-height:150px; border-radius: var(--radius-md); margin-top: 1rem; cursor: pointer; border: 2px solid var(--border-color);" 
+                   data-bs-toggle="modal" data-bs-target="#imageModal" 
+                   onclick="showImageModal('{{ c.photo.url }}', 'Comentario del {{ c.created_at|date:"d/m/Y H:i" }}')">
+            {% endif %}
+          </div>
+          {% empty %}
+          <div class="text-center" style="padding: 2rem; color: var(--text-muted);">
+            <i class="bi bi-chat" style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;"></i>
+            <strong>Sin comentarios</strong>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
     </div>
   </div>
 </div>

@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}PRI - Plataforma de Reprogramación Inteligente de Entregas{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div style="background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); border-radius: var(--radius-xl); padding: 4rem 2rem; text-align: center; color: white; position: relative; overflow: hidden; margin-bottom: 4rem;">
+    <!-- Decorative elements -->
+    <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; filter: blur(40px);"></div>
+    <div style="position: absolute; bottom: -50px; left: -50px; width: 200px; height: 200px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; filter: blur(40px);"></div>
+    
+    <div style="position: relative; z-index: 1;">
+        <div style="display: inline-flex; align-items: center; gap: 1rem; background: rgba(255, 255, 255, 0.2); padding: 0.75rem 1.5rem; border-radius: var(--radius-lg); backdrop-filter: blur(10px); margin-bottom: 2rem;">
+            <i class="bi bi-lightning-charge-fill" style="font-size: 1.5rem;"></i>
+            <span style="font-weight: 700; font-size: 1.1rem;">Innovación en Logística</span>
+        </div>
+        
+        <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 900; line-height: 1.1; margin-bottom: 1.5rem;">
+            Bienvenido a <span style="color: white; font-weight: 900;">PRI</span>
+        </h1>
+        
+        <p style="font-size: clamp(1.1rem, 2vw, 1.5rem); max-width: 700px; margin: 0 auto 2.5rem; opacity: 0.95; line-height: 1.6;">
+            La plataforma inteligente que revoluciona la gestión de entregas con reprogramación automática y seguimiento en tiempo real
+        </p>
+        
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="/shop/" class="btn-modern" style="background: white; color: var(--cursia-blue); font-size: 1.1rem; padding: 1rem 2rem;">
+                <i class="bi bi-shop"></i>
+                Explorar Productos
+            </a>
+            <a href="/accounts/signup/" class="btn-modern" style="background: rgba(255, 255, 255, 0.2); color: white; border: 2px solid white; font-size: 1.1rem; padding: 1rem 2rem; backdrop-filter: blur(10px);">
+                <i class="bi bi-person-plus"></i>
+                Crear Cuenta
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row g-4 mb-5">
+    <div class="col-12 text-center mb-4">
+        <h2 class="mb-2">
+            <span class="text-gradient">¿Por qué elegir PRI?</span>
+        </h2>
+        <p class="text-muted" style="font-size: 1.1rem;">Tecnología de punta para optimizar tus entregas</p>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="modern-card h-100 text-center" style="border-top: 4px solid #01c9ff;">
+            <div class="modern-card-body">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: white; font-size: 2.5rem;">
+                    <i class="bi bi-cpu"></i>
+                </div>
+                <h4 style="margin-bottom: 1rem; font-weight: 700;">Reprogramación Inteligente</h4>
+                <p style="color: var(--text-secondary); line-height: 1.7;">
+                    Algoritmos avanzados que optimizan las rutas y horarios de entrega automáticamente
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="modern-card h-100 text-center" style="border-top: 4px solid #6366f1;">
+            <div class="modern-card-body">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: white; font-size: 2.5rem;">
+                    <i class="bi bi-geo-alt"></i>
+                </div>
+                <h4 style="margin-bottom: 1rem; font-weight: 700;">Seguimiento en Tiempo Real</h4>
+                <p style="color: var(--text-secondary); line-height: 1.7;">
+                    Monitorea tus pedidos en cada momento con actualizaciones instantáneas
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="modern-card h-100 text-center" style="border-top: 4px solid #01c9ff;">
+            <div class="modern-card-body">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: white; font-size: 2.5rem;">
+                    <i class="bi bi-bell"></i>
+                </div>
+                <h4 style="margin-bottom: 1rem; font-weight: 700;">Notificaciones Proactivas</h4>
+                <p style="color: var(--text-secondary); line-height: 1.7;">
+                    Mantente informado con alertas inteligentes sobre el estado de tus entregas
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Featured Products Section -->
+{% if featured_products %}
+<div class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <span class="text-gradient">Productos Destacados</span>
+            </h2>
+            <p class="text-muted mb-0">Descubre nuestra selección especial</p>
+        </div>
+        <a href="/shop/" class="btn-modern btn-outline-modern">
+            Ver Todos <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+    
+    <div class="products-grid">
+        {% for product in featured_products %}
+        <div class="product-card">
+            <div class="product-image-container">
+                {% if product.image %}
+                    <img class="product-image" src="{{ product.image.url }}" alt="{{ product.name }}">
+                {% else %}
+                    <div class="product-image" style="background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                        <i class="bi bi-image"></i>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="product-content">
+                <div class="product-category">
+                    <i class="bi bi-tag-fill"></i> {{ product.category.name }}
+                </div>
+                <h3 class="product-title">{{ product.name }}</h3>
+                <p class="product-description">{{ product.description|truncatewords:12 }}</p>
+                
+                <div class="product-footer">
+                    <div class="product-price">${{ product.price }}</div>
+                    <a href="{% url 'catalog:product_detail' product.slug %}" class="btn-modern btn-primary-modern" style="padding: 0.5rem 1rem;">
+                        <i class="bi bi-eye"></i> Ver
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- CTA Section -->
+<div style="background: linear-gradient(135deg, #6366f1 0%, #01c9ff 100%); border-radius: var(--radius-xl); padding: 3rem 2rem; text-align: center; color: white; position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -30px; right: 10%; width: 150px; height: 150px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; filter: blur(40px);"></div>
+    <div style="position: absolute; bottom: -30px; left: 10%; width: 150px; height: 150px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; filter: blur(40px);"></div>
+    
+    <div style="position: relative; z-index: 1; max-width: 700px; margin: 0 auto;">
+        <h2 style="font-size: clamp(1.75rem, 3vw, 2.5rem); font-weight: 800; margin-bottom: 1rem;">
+            ¿Listo para optimizar tus entregas?
+        </h2>
+        <p style="font-size: 1.1rem; margin-bottom: 2rem; opacity: 0.95;">
+            Únete a cientos de usuarios que ya confían en PRI para gestionar sus envíos de manera eficiente
+        </p>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="/accounts/signup/" class="btn-modern" style="background: white; color: var(--cursia-blue); font-size: 1.1rem; padding: 1rem 2rem;">
+                <i class="bi bi-rocket-takeoff"></i>
+                Comenzar Ahora
+            </a>
+            <a href="/shop/" class="btn-modern" style="background: transparent; color: white; border: 2px solid white; font-size: 1.1rem; padding: 1rem 2rem;">
+                <i class="bi bi-cart3"></i>
+                Ver Catálogo
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="row g-4 mt-5 mb-3">
+    <div class="col-md-3 col-6 text-center">
+        <div style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            98%
+        </div>
+        <div style="color: var(--text-secondary); font-weight: 600; margin-top: 0.5rem;">Entregas Exitosas</div>
+    </div>
+    <div class="col-md-3 col-6 text-center">
+        <div style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            24h
+        </div>
+        <div style="color: var(--text-secondary); font-weight: 600; margin-top: 0.5rem;">Tiempo de Entrega</div>
+    </div>
+    <div class="col-md-3 col-6 text-center">
+        <div style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            1000+
+        </div>
+        <div style="color: var(--text-secondary); font-weight: 600; margin-top: 0.5rem;">Clientes Satisfechos</div>
+    </div>
+    <div class="col-md-3 col-6 text-center">
+        <div style="font-size: 3rem; font-weight: 900; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            5★
+        </div>
+        <div style="color: var(--text-secondary); font-weight: 600; margin-top: 0.5rem;">Valoración Media</div>
+    </div>
+</div>
+
+<style>
+    /* Hero animation */
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+    
+    .hero-icon {
+        animation: float 3s ease-in-out infinite;
+    }
+</style>
+{% endblock %}
+

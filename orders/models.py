@@ -57,8 +57,26 @@ class Delivery(models.Model):
 
     @property
     def estimated_datetime(self):
-        from datetime import timedelta
-        # Estimado: 24 horas después de la creación del pedido
+        from datetime import datetime, timedelta
+        
+        # Si hay fecha programada, usar esa como base para el estimado
+        if self.scheduled_date:
+            # Si hay ventana horaria programada, intentar parsear la hora inicial
+            if self.scheduled_window:
+                try:
+                    # Formato esperado: "14:00-16:00" o "14:00"
+                    time_parts = self.scheduled_window.split('-')[0].strip().split(':')
+                    hour = int(time_parts[0])
+                    minute = int(time_parts[1]) if len(time_parts) > 1 else 0
+                    return datetime.combine(self.scheduled_date, datetime.min.time().replace(hour=hour, minute=minute))
+                except (ValueError, IndexError):
+                    # Si no se puede parsear, usar mediodía como hora por defecto
+                    return datetime.combine(self.scheduled_date, datetime.min.time().replace(hour=12, minute=0))
+            else:
+                # Sin ventana horaria, usar mediodía
+                return datetime.combine(self.scheduled_date, datetime.min.time().replace(hour=12, minute=0))
+        
+        # Si no hay fecha programada, usar el estimado original: 24 horas después de la creación
         return self.order.created_at + timedelta(days=1)
     
     @property
@@ -115,6 +133,8 @@ class DeliveryNotification(models.Model):
         ("arriving_soon", "Llegando pronto (3 min)"),
         ("arrived", "Ha llegado"),
         ("delivered", "Entregado"),
+        ("rescheduled", "Reprogramado"),
+        ("failed", "Entrega Fallida"),
     )
     
     delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE, related_name="notifications")
