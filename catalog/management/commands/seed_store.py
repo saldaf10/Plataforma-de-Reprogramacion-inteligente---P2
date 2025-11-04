@@ -2,7 +2,6 @@ from django.core.management.base import BaseCommand
 from catalog.models import Category, Product
 from decimal import Decimal
 from django.core.files import File
-import os
 from pathlib import Path
 
 
@@ -10,14 +9,15 @@ class Command(BaseCommand):
     help = "Seed initial categories and products"
 
     def handle(self, *args, **options):
-        # Mapeo de productos a nombres de archivo de imagen
+        # Mapeo de productos a nombres de archivo tal como existen en el repo
+        # Las imágenes están en la carpeta "imagenes" en la raíz del proyecto
         image_mapping = {
-            "Tenis Urban Pro": "tenis_urban_pro.png",
-            "Botas Trekking X": "botas_trekking_x.png",
-            "Aroma Nocturno": "aroma_nocturno.png",
-            "Cítrico Fresh": "cítrico_fresh.png",
-            "Whey Protein 1kg": "whey_protein_1kg.png",
-            "Caseína 1kg": "caseína_1kg.png",
+            "Tenis Urban Pro": "tenisurbanpro.png",
+            "Botas Trekking X": "botastrekkingx.png",
+            "Aroma Nocturno": "aromanocturno.png",
+            "Cítrico Fresh": "Citricofresh.png",
+            "Whey Protein 1kg": "Wheyprotein1kg.png",
+            "Caseína 1kg": "Caseina1kg.png",
         }
 
         data = {
@@ -35,15 +35,19 @@ class Command(BaseCommand):
             ],
         }
 
-        # Obtener la ruta base del proyecto
+        # Obtener la ruta base del proyecto y la carpeta de imágenes existente
         base_dir = Path(__file__).resolve().parent.parent.parent.parent
-        images_dir = base_dir / "media" / "products"
+        images_dir = base_dir / "imagenes"
+        # Asegurar carpeta de media/products exista
+        from django.conf import settings
+        media_products = Path(settings.MEDIA_ROOT) / "products"
+        media_products.mkdir(parents=True, exist_ok=True)
 
         for cat_name, products in data.items():
-            category, _ = Category.objects.get_or_create(name=cat_name.title())
+            category, _ = Category.objects.get_or_create(name=cat_name.title())  # type: ignore[attr-defined]
             created = 0
             for p in products:
-                prod, _ = Product.objects.get_or_create(
+                prod, _ = Product.objects.get_or_create(  # type: ignore[attr-defined]
                     name=p["name"],
                     defaults={
                         "category": category,
@@ -53,17 +57,18 @@ class Command(BaseCommand):
                     },
                 )
                 
-                # Asignar imagen si existe y el producto no tiene una
-                if not prod.image and p["name"] in image_mapping:
+                # Asignar/actualizar imagen si existe en el repo
+                if p["name"] in image_mapping:
                     image_filename = image_mapping[p["name"]]
                     image_path = images_dir / image_filename
                     
                     if image_path.exists():
                         with open(image_path, 'rb') as img_file:
+                            # Guardar bajo el upload_to de Product (products/)
                             prod.image.save(image_filename, File(img_file), save=True)
-                        self.stdout.write(self.style.SUCCESS(f"  → Image assigned to {prod.name}"))
+                        self.stdout.write(self.style.SUCCESS(f"  → Image set for {prod.name}: {prod.image.name}"))  # type: ignore[attr-defined]
                     else:
-                        self.stdout.write(self.style.WARNING(f"  ⚠ Image not found: {image_path}"))
+                        self.stdout.write(self.style.WARNING(f"  ⚠ Image not found: {image_path}"))  # type: ignore[attr-defined]
                 
                 created += 1
-            self.stdout.write(self.style.SUCCESS(f"Seeded/updated {created} products for {category.name}"))
+            self.stdout.write(self.style.SUCCESS(f"Seeded/updated {created} products for {category.name}"))  # type: ignore[attr-defined]

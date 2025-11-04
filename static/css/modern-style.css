@@ -562,7 +562,9 @@ a:hover {
 .modern-alert-info {
     background: #e0f2fe;
     border-color: var(--pri-blue);
-    color: #075985;
+    color: #222;
+    font-weight: 700;
+    font-size: 1.15rem;
 }
 
 .modern-alert-success {
@@ -574,13 +576,17 @@ a:hover {
 .modern-alert-warning {
     background: #fef3c7;
     border-color: #f59e0b;
-    color: #92400e;
+    color: #222;
+    font-weight: 700;
+    font-size: 1.15rem;
 }
 
 .modern-alert-danger {
     background: #fee2e2;
     border-color: #ef4444;
-    color: #991b1b;
+    color: #222;
+    font-weight: 700;
+    font-size: 1.15rem;
 }
 
 /* ========================================
