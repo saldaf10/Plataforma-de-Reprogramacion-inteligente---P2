@@ -4,7 +4,7 @@ from django.db import transaction
 from django.db.models import Count, Q
 from django.contrib import messages
 from catalog.models import Product
-from .models import Order, OrderItem, Delivery, DeliveryEvent, DeliveryComment, DeliveryNotification
+from .models import Order, OrderItem, Delivery, DeliveryEvent, DeliveryComment, DeliveryNotification, DeliveryFailureReason
 from .notification_service import DeliveryNotificationService
 
 
@@ -121,12 +121,28 @@ def delivery_detail(request, order_id: int):
         if user_role == "manager":
             if action == "assign":
                 before = delivery.status
+                old_rider = delivery.rider
+                old_date = delivery.scheduled_date
+                old_window = delivery.scheduled_window
+                
                 rider_id = request.POST.get("rider_id")
-                delivery.scheduled_date = request.POST.get("scheduled_date") or delivery.scheduled_date
-                delivery.scheduled_window = request.POST.get("scheduled_window") or delivery.scheduled_window
+                new_scheduled_date = request.POST.get("scheduled_date")
+                new_scheduled_window = request.POST.get("scheduled_window")
+                
+                # Capturar cambios antes de guardar
+                date_changed = new_scheduled_date and new_scheduled_date != str(old_date) if old_date else bool(new_scheduled_date)
+                window_changed = new_scheduled_window != old_window
+                rider_changed = rider_id and int(rider_id) != old_rider.id if old_rider else bool(rider_id)
+                
+                if new_scheduled_date:
+                    delivery.scheduled_date = new_scheduled_date
+                if new_scheduled_window:
+                    delivery.scheduled_window = new_scheduled_window
+                
                 if rider_id:
                     delivery.rider_id = int(rider_id)
                     delivery.status = "asignada"
+                
                 delivery.save()
                 DeliveryEvent.objects.create(
                     delivery=delivery,
@@ -135,6 +151,20 @@ def delivery_detail(request, order_id: int):
                     status_after=delivery.status,
                     notes=f"Asignado rider {delivery.rider.username if delivery.rider else ''}"
                 )
+                
+                # Notificar a coordinadores sobre cambios
+                # Marcar para evitar notificación duplicada desde señales
+                delivery._notification_sent = True
+                
+                if rider_changed:
+                    DeliveryNotificationService.notify_coordinators_rider_assigned(
+                        delivery, old_rider=old_rider, changed_by=request.user
+                    )
+                
+                if date_changed or window_changed:
+                    DeliveryNotificationService.notify_coordinators_schedule_changed(
+                        delivery, old_date=old_date, old_window=old_window, changed_by=request.user
+                    )
             elif action == "manager_comment":
                 msg = request.POST.get("message", "").strip()
                 photo = request.FILES.get("photo")
@@ -149,13 +179,21 @@ def delivery_detail(request, order_id: int):
         elif user_role == "repartidor":
             if action in {"en_ruta", "fallida", "entregada", "reprogramada"}:
                 before = delivery.status
+                
+                # Validar razón de fallo si se marca como fallida
+                if action == "fallida":
+                    failure_reason_code = request.POST.get("failure_reason", "").strip()
+                    if not failure_reason_code:
+                        messages.error(request, "Debe seleccionar una razón del fallo para marcar la entrega como fallida.")
+                        return redirect("orders:delivery_detail", order_id=order.id)
+                
                 delivery.status = action
-                delivery.failure_reason = request.POST.get("failure_reason", "")
                 delivery.notes = request.POST.get("notes", "")
                 photo_file = request.FILES.get("photo")
                 if photo_file:
                     delivery.photo = photo_file
                 delivery.save()
+                
                 DeliveryEvent.objects.create(
                     delivery=delivery,
                     user=request.user,
@@ -165,12 +203,49 @@ def delivery_detail(request, order_id: int):
                     photo=delivery.photo if photo_file else None,
                 )
                 
-                # Si el pedido se marca como fallido, enviar notificación automática al cliente
+                # Si el pedido se marca como fallido, guardar la razón
                 if action == "fallida":
-                    failure_reason = delivery.failure_reason or delivery.notes or ""
-                    DeliveryNotificationService.send_failed_notification(delivery, failure_reason)
-                    messages.success(request, f"Entrega marcada como fallida. El cliente ha sido notificado automáticamente.")
+                    from .models import DeliveryFailureReason
+                    failure_reason_code = request.POST.get("failure_reason", "").strip()
+                    failure_details = request.POST.get("failure_details", "").strip()
+                    
+                    # Calcular el número de intento (contar cuántas veces ha fallado antes)
+                    attempt_number = DeliveryFailureReason.objects.filter(delivery=delivery).count() + 1
+                    
+                    # Guardar la razón de fallo
+                    DeliveryFailureReason.objects.create(
+                        delivery=delivery,
+                        reason=failure_reason_code,
+                        details=failure_details,
+                        reported_by=request.user,
+                        attempt_number=attempt_number
+                    )
+                    
+                    # Actualizar el campo legacy para compatibilidad
+                    delivery.failure_reason = failure_reason_code
+                    delivery.save()
+                    
+                    # Construir mensaje para notificaciones
+                    failure_reason_display = dict(DeliveryFailureReason.FAILURE_REASONS).get(failure_reason_code, failure_reason_code)
+                    failure_message = f"{failure_reason_display}"
+                    if failure_details:
+                        failure_message += f": {failure_details}"
+                    
+                    DeliveryNotificationService.send_failed_notification(delivery, failure_message)
+                    DeliveryNotificationService.notify_coordinators_delivery_failed(
+                        delivery, failure_reason=failure_message, changed_by=request.user
+                    )
+                    messages.success(request, f"Entrega marcada como fallida (Intento #{attempt_number}). El cliente ha sido notificado automáticamente.")
                 else:
+                    # Marcar para evitar notificación duplicada desde señales
+                    delivery._notification_sent = True
+                    
+                    # Notificar a coordinadores sobre cambio de estado
+                    if before != delivery.status:
+                        DeliveryNotificationService.notify_coordinators_status_changed(
+                            delivery, old_status=before, changed_by=request.user
+                        )
+                    
                     messages.success(request, f"Estado actualizado a '{delivery.get_status_display()}'.")
             # Manejar notificaciones del repartidor
             elif action == "send_notification":
@@ -245,6 +320,14 @@ def delivery_detail(request, order_id: int):
                                         recipient=delivery.rider,
                                         message=notification_message
                                     )
+                                
+                                # Marcar para evitar notificación duplicada desde señales
+                                delivery._notification_sent = True
+                                
+                                # Notificar a coordinadores sobre la reprogramación
+                                DeliveryNotificationService.notify_coordinators_rescheduled(
+                                    delivery, old_date=old_date, old_window=old_window, changed_by=request.user
+                                )
                                 
                                 messages.success(request, f"Tu entrega ha sido reprogramada para el {date_obj} {scheduled_window or ''}. Recibirás una confirmación pronto.")
                         except ValueError:
@@ -351,3 +434,286 @@ def notifications(request):
     return render(request, "orders/notifications.html", {
         "notifications": notifications
     })
+
+
+@login_required
+def download_report(request):
+    """Genera y descarga reportes de entregas en Excel o PDF"""
+    user = request.user
+    if not user.is_superuser and (not hasattr(user, "profile") or user.profile.role != "manager"):
+        return redirect("orders:my_orders")
+    
+    format_type = request.GET.get("format", "excel")  # excel o pdf
+    status = request.GET.get("status", "")
+    date_from = request.GET.get("date_from", "")
+    date_to = request.GET.get("date_to", "")
+    
+    # Obtener entregas con filtros
+    deliveries = Delivery.objects.select_related("order", "rider").all()
+    
+    if status:
+        deliveries = deliveries.filter(status=status)
+    
+    if date_from:
+        try:
+            from datetime import datetime
+            date_from_obj = datetime.strptime(date_from, "%Y-%m-%d").date()
+            deliveries = deliveries.filter(scheduled_date__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            from datetime import datetime
+            date_to_obj = datetime.strptime(date_to, "%Y-%m-%d").date()
+            deliveries = deliveries.filter(scheduled_date__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    deliveries = deliveries.order_by("-created_at")
+    
+    if format_type == "excel":
+        return generate_excel_report(deliveries)
+    else:
+        return generate_pdf_report(deliveries)
+
+
+def generate_excel_report(deliveries):
+    """Genera reporte en formato Excel"""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from django.http import HttpResponse
+    from datetime import datetime
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Reporte de Entregas"
+    
+    # Encabezados
+    headers = [
+        "ID Pedido", "Cliente", "Email", "Dirección", "Ciudad",
+        "Estado", "Repartidor", "Fecha Programada", "Franja Horaria",
+        "Fecha Creación", "Total ($)"
+    ]
+    
+    # Estilo para encabezados
+    header_fill = PatternFill(start_color="01C9FF", end_color="01C9FF", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+    
+    # Datos
+    for row, delivery in enumerate(deliveries, 2):
+        order = delivery.order
+        ws.cell(row=row, column=1, value=order.id)
+        ws.cell(row=row, column=2, value=order.full_name)
+        ws.cell(row=row, column=3, value=order.email)
+        ws.cell(row=row, column=4, value=order.address)
+        ws.cell(row=row, column=5, value=order.city)
+        ws.cell(row=row, column=6, value=delivery.get_status_display())
+        ws.cell(row=row, column=7, value=delivery.rider.username if delivery.rider else "Sin asignar")
+        ws.cell(row=row, column=8, value=delivery.scheduled_date.strftime("%d/%m/%Y") if delivery.scheduled_date else "")
+        ws.cell(row=row, column=9, value=delivery.scheduled_window or "")
+        ws.cell(row=row, column=10, value=delivery.created_at.strftime("%d/%m/%Y %H:%M"))
+        ws.cell(row=row, column=11, value=float(order.total_amount))
+    
+    # Ajustar ancho de columnas
+    column_widths = [12, 25, 25, 30, 15, 15, 15, 18, 15, 18, 12]
+    for col, width in enumerate(column_widths, 1):
+        ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = width
+    
+    # Respuesta
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    filename = f"reporte_entregas_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
+
+
+def generate_pdf_report(deliveries):
+    """Genera reporte en formato PDF"""
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    from django.http import HttpResponse
+    from datetime import datetime
+    
+    response = HttpResponse(content_type="application/pdf")
+    filename = f"reporte_entregas_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    
+    doc = SimpleDocTemplate(response, pagesize=A4)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "CustomTitle",
+        parent=styles["Heading1"],
+        fontSize=18,
+        textColor=colors.toColor("#01C9FF"),
+        alignment=TA_CENTER,
+        spaceAfter=30
+    )
+    
+    # Título
+    elements.append(Paragraph("Reporte de Entregas", title_style))
+    elements.append(Paragraph(f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", styles["Normal"]))
+    elements.append(Spacer(1, 0.3 * inch))
+    
+    # Preparar datos para la tabla
+    data = [["ID", "Cliente", "Estado", "Repartidor", "Fecha Prog.", "Total"]]
+    
+    for delivery in deliveries:
+        order = delivery.order
+        row = [
+            str(order.id),
+            order.full_name[:20] + "..." if len(order.full_name) > 20 else order.full_name,
+            delivery.get_status_display(),
+            delivery.rider.username[:15] + "..." if delivery.rider and len(delivery.rider.username) > 15 else (delivery.rider.username if delivery.rider else "Sin asignar"),
+            delivery.scheduled_date.strftime("%d/%m/%Y") if delivery.scheduled_date else "",
+            f"${order.total_amount:.2f}"
+        ]
+        data.append(row)
+    
+    # Crear tabla
+    table = Table(data, colWidths=[0.8*inch, 2*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1*inch])
+    
+    # Estilo de tabla
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.toColor("#01C9FF")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+        ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+        ("TEXTCOLOR", (0, 1), (-1, -1), colors.black),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 1), (-1, -1), 8),
+        ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+    ]))
+    
+    elements.append(table)
+    
+    # Resumen
+    elements.append(Spacer(1, 0.3 * inch))
+    total_count = deliveries.count()
+    delivered_count = deliveries.filter(status="entregada").count()
+    failed_count = deliveries.filter(status="fallida").count()
+    
+    summary_text = f"""
+    <b>Resumen:</b><br/>
+    Total de entregas: {total_count}<br/>
+    Entregadas: {delivered_count}<br/>
+    Fallidas: {failed_count}
+    """
+    elements.append(Paragraph(summary_text, styles["Normal"]))
+    
+    doc.build(elements)
+    return response
+
+
+@login_required
+def failure_statistics(request):
+    """Dashboard con estadísticas de causas de fallo en entregas"""
+    user = request.user
+    if not user.is_superuser and (not hasattr(user, "profile") or user.profile.role != "manager"):
+        return redirect("orders:my_orders")
+    
+    from django.db.models import Count, Q
+    from datetime import datetime, timedelta
+    
+    # Filtros opcionales
+    date_from = request.GET.get("date_from", "")
+    date_to = request.GET.get("date_to", "")
+    
+    # Obtener todas las razones de fallo
+    failure_reasons_qs = DeliveryFailureReason.objects.select_related("delivery", "delivery__order", "reported_by")
+    
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, "%Y-%m-%d").date()
+            failure_reasons_qs = failure_reasons_qs.filter(created_at__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, "%Y-%m-%d").date()
+            failure_reasons_qs = failure_reasons_qs.filter(created_at__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    # Estadísticas por razón
+    reason_stats = failure_reasons_qs.values("reason").annotate(
+        count=Count("id")
+    ).order_by("-count")
+    
+    # Convertir a formato más legible
+    reason_stats_list = []
+    total_failures = failure_reasons_qs.count()
+    
+    for stat in reason_stats:
+        reason_code = stat["reason"]
+        count = stat["count"]
+        percentage = (count / total_failures * 100) if total_failures > 0 else 0
+        
+        reason_stats_list.append({
+            "code": reason_code,
+            "display": dict(DeliveryFailureReason.FAILURE_REASONS).get(reason_code, reason_code),
+            "count": count,
+            "percentage": round(percentage, 1)
+        })
+    
+    # Estadísticas por número de intento
+    attempt_stats = failure_reasons_qs.values("attempt_number").annotate(
+        count=Count("id")
+    ).order_by("attempt_number")
+    
+    # Estadísticas por repartidor
+    rider_stats = failure_reasons_qs.values(
+        "reported_by__username"
+    ).annotate(
+        count=Count("id")
+    ).order_by("-count")[:10]  # Top 10 repartidores
+    
+    # Entregas con múltiples fallos
+    deliveries_with_multiple_failures = Delivery.objects.annotate(
+        failure_count=Count("failure_reasons")
+    ).filter(failure_count__gt=1).order_by("-failure_count")[:10]
+    
+    # Estadísticas por mes (últimos 6 meses) - simplificado
+    from django.utils import timezone
+    from collections import defaultdict
+    six_months_ago = timezone.now() - timedelta(days=180)
+    recent_failures = failure_reasons_qs.filter(created_at__gte=six_months_ago)
+    
+    monthly_dict = defaultdict(int)
+    for failure in recent_failures:
+        month_key = failure.created_at.strftime("%Y-%m")
+        monthly_dict[month_key] += 1
+    
+    monthly_stats = [{"month": month, "count": count} for month, count in sorted(monthly_dict.items())]
+    
+    context = {
+        "reason_stats": reason_stats_list,
+        "total_failures": total_failures,
+        "attempt_stats": list(attempt_stats),
+        "rider_stats": list(rider_stats),
+        "deliveries_with_multiple_failures": deliveries_with_multiple_failures,
+        "monthly_stats": list(monthly_stats),
+        "date_from": date_from,
+        "date_to": date_to,
+    }
+    
+    return render(request, "orders/failure_statistics.html", context)

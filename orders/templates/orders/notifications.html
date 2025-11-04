@@ -32,6 +32,16 @@
                                     <span class="badge bg-danger me-2">❌ Entrega Fallida</span>
                                 {% elif notification.notification_type == "rescheduled" %}
                                     <span class="badge bg-warning me-2">📅 Reprogramado</span>
+                                {% elif notification.notification_type == "coordinator_rescheduled" %}
+                                    <span class="badge bg-danger me-2">🚨 Reprogramación - Coordinador</span>
+                                {% elif notification.notification_type == "coordinator_status_changed" %}
+                                    <span class="badge bg-info me-2">🔄 Cambio de Estado - Coordinador</span>
+                                {% elif notification.notification_type == "coordinator_rider_assigned" %}
+                                    <span class="badge bg-primary me-2">👤 Asignación - Coordinador</span>
+                                {% elif notification.notification_type == "coordinator_schedule_changed" %}
+                                    <span class="badge bg-warning me-2">📅 Cambio Programación - Coordinador</span>
+                                {% elif notification.notification_type == "coordinator_delivery_failed" %}
+                                    <span class="badge bg-danger me-2">❌ Entrega Fallida - Coordinador</span>
                                 {% else %}
                                     <span class="badge bg-secondary me-2">📬 Notificación</span>
                                 {% endif %}
@@ -41,7 +51,7 @@
                                 </small>
                             </div>
                             
-                            <p class="mb-2 {% if not notification.read %}fw-bold{% endif %}">
+                            <p class="mb-2 {% if not notification.read %}fw-bold{% endif %}" style="white-space: pre-line;">
                                 {{ notification.message }}
                             </p>
                             

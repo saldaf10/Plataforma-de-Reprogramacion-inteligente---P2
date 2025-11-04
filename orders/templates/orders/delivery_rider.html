@@ -223,7 +223,7 @@
             <label class="modern-form-label">
               <i class="bi bi-arrow-repeat"></i> Cambiar Estado
             </label>
-            <select class="modern-form-control" name="action">
+            <select class="modern-form-control" name="action" id="statusSelect" onchange="toggleFailureReason()">
               <option value="en_ruta" {% if delivery.status == 'en_ruta' %}selected{% endif %}>En ruta</option>
               <option value="entregada" {% if delivery.status == 'entregada' %}selected{% endif %}>Entregada</option>
               <option value="fallida" {% if delivery.status == 'fallida' %}selected{% endif %}>Fallida</option>
@@ -231,7 +231,36 @@
             </select>
           </div>
           
-          <button type="submit" class="btn-modern btn-primary-modern w-100">
+          <!-- Campo de Razón de Fallo (obligatorio cuando se selecciona "fallida") -->
+          <div class="modern-form-group" id="failureReasonGroup" style="display: none;">
+            <label class="modern-form-label" style="color: #ef4444;">
+              <i class="bi bi-exclamation-triangle-fill"></i> Razón del Fallo <span style="color: #ef4444;">*</span>
+            </label>
+            <select class="modern-form-control" name="failure_reason" id="failureReasonSelect" required>
+              <option value="">-- Seleccione una razón --</option>
+              <option value="ausencia_personal">Ausencia de personal en destino</option>
+              <option value="error_direccion">Error en la dirección</option>
+              <option value="direccion_inexistente">Dirección no existe</option>
+              <option value="cliente_no_responde">Cliente no responde</option>
+              <option value="acceso_denegado">Acceso denegado al edificio/ubicación</option>
+              <option value="producto_daniado">Producto dañado</option>
+              <option value="documentacion_incompleta">Documentación incompleta</option>
+              <option value="cliente_rechazo">Cliente rechazó la entrega</option>
+              <option value="problema_vehiculo">Problema con el vehículo</option>
+              <option value="condiciones_climaticas">Condiciones climáticas adversas</option>
+              <option value="otra">Otra razón</option>
+            </select>
+          </div>
+          
+          <!-- Campo de Detalles Adicionales para Razón de Fallo -->
+          <div class="modern-form-group" id="failureDetailsGroup" style="display: none;">
+            <label class="modern-form-label">
+              <i class="bi bi-file-text"></i> Detalles Adicionales (Opcional)
+            </label>
+            <textarea class="modern-form-control" name="failure_details" id="failureDetails" rows="3" placeholder="Proporcione más detalles sobre la razón del fallo..."></textarea>
+          </div>
+          
+          <button type="submit" class="btn-modern btn-primary-modern w-100" id="submitBtn">
             <i class="bi bi-check-circle"></i>
             Guardar Cambios
           </button>
@@ -459,5 +488,44 @@ function showImageModal(imageUrl, imageInfo) {
   document.getElementById('modalImageInfo').textContent = imageInfo;
   document.getElementById('downloadImage').href = imageUrl;
 }
+
+function toggleFailureReason() {
+  const statusSelect = document.getElementById('statusSelect');
+  const failureReasonGroup = document.getElementById('failureReasonGroup');
+  const failureDetailsGroup = document.getElementById('failureDetailsGroup');
+  const failureReasonSelect = document.getElementById('failureReasonSelect');
+  const submitBtn = document.getElementById('submitBtn');
+  
+  if (statusSelect.value === 'fallida') {
+    failureReasonGroup.style.display = 'block';
+    failureDetailsGroup.style.display = 'block';
+    failureReasonSelect.required = true;
+    
+    // Validar antes de enviar
+    submitBtn.onclick = function(e) {
+      if (!failureReasonSelect.value) {
+        e.preventDefault();
+        alert('Por favor, seleccione una razón del fallo antes de continuar.');
+        failureReasonSelect.focus();
+        return false;
+      }
+    };
+  } else {
+    failureReasonGroup.style.display = 'none';
+    failureDetailsGroup.style.display = 'none';
+    failureReasonSelect.required = false;
+    failureReasonSelect.value = '';
+    document.getElementById('failureDetails').value = '';
+    submitBtn.onclick = null;
+  }
+}
+
+// Ejecutar al cargar la página si el estado actual es "fallida"
+document.addEventListener('DOMContentLoaded', function() {
+  const statusSelect = document.getElementById('statusSelect');
+  if (statusSelect && statusSelect.value === 'fallida') {
+    toggleFailureReason();
+  }
+});
 </script>
 {% endblock %}

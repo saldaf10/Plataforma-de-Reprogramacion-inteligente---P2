@@ -135,10 +135,15 @@ class DeliveryNotification(models.Model):
         ("delivered", "Entregado"),
         ("rescheduled", "Reprogramado"),
         ("failed", "Entrega Fallida"),
+        ("coordinator_rescheduled", "Reprogramación - Coordinador"),
+        ("coordinator_status_changed", "Cambio de Estado - Coordinador"),
+        ("coordinator_rider_assigned", "Asignación de Repartidor - Coordinador"),
+        ("coordinator_schedule_changed", "Cambio de Programación - Coordinador"),
+        ("coordinator_delivery_failed", "Entrega Fallida - Coordinador"),
     )
     
     delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE, related_name="notifications")
-    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    notification_type = models.CharField(max_length=35, choices=NOTIFICATION_TYPES)
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="delivery_notifications")
     message = models.TextField()
     sent_at = models.DateTimeField(auto_now_add=True)
@@ -149,3 +154,36 @@ class DeliveryNotification(models.Model):
     
     def __str__(self) -> str:
         return f"Notification {self.get_notification_type_display()} for {self.recipient.username}"
+
+
+class DeliveryFailureReason(models.Model):
+    """Modelo para almacenar el historial de razones de fallo en entregas"""
+    
+    FAILURE_REASONS = (
+        ("ausencia_personal", "Ausencia de personal en destino"),
+        ("error_direccion", "Error en la dirección"),
+        ("direccion_inexistente", "Dirección no existe"),
+        ("cliente_no_responde", "Cliente no responde"),
+        ("acceso_denegado", "Acceso denegado al edificio/ubicación"),
+        ("producto_daniado", "Producto dañado"),
+        ("documentacion_incompleta", "Documentación incompleta"),
+        ("cliente_rechazo", "Cliente rechazó la entrega"),
+        ("problema_vehiculo", "Problema con el vehículo"),
+        ("condiciones_climaticas", "Condiciones climáticas adversas"),
+        ("otra", "Otra razón"),
+    )
+    
+    delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE, related_name="failure_reasons")
+    reason = models.CharField(max_length=50, choices=FAILURE_REASONS)
+    details = models.TextField(blank=True, help_text="Detalles adicionales sobre la razón del fallo")
+    reported_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="reported_failures")
+    created_at = models.DateTimeField(auto_now_add=True)
+    attempt_number = models.PositiveIntegerField(default=1, help_text="Número de intento de entrega")
+    
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Razón de Fallo de Entrega"
+        verbose_name_plural = "Razones de Fallo de Entregas"
+    
+    def __str__(self) -> str:
+        return f"Razón de fallo: {self.get_reason_display()} - Entrega #{self.delivery_id} (Intento {self.attempt_number})"
