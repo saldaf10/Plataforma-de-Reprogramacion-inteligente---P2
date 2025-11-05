@@ -3,6 +3,7 @@ services:
     name: p2-django
     env: python
     plan: free
+    pythonVersion: 3.11.5
     buildCommand: |
       pip install --upgrade pip
       pip install -r requirements.txt
@@ -13,8 +14,6 @@ services:
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: core.settings
-      - key: PYTHON_VERSION
-        value: 3.11.5
       - key: SECRET_KEY
         generate: true
       - key: ALLOWED_HOSTS
