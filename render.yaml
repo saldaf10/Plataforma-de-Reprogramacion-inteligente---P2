@@ -8,7 +8,7 @@ services:
       pip install --upgrade pip
       pip install -r requirements.txt
       python manage.py collectstatic --noinput
-    startCommand: gunicorn core.wsgi:application --preload --log-file -
+    startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --preload --log-file -
     postDeployCommand: |
       python manage.py migrate --noinput
     envVars:
