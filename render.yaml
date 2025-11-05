@@ -8,9 +8,10 @@ services:
       pip install --upgrade pip
       pip install -r requirements.txt
       python manage.py collectstatic --noinput
-    startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --preload --log-file -
+    startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --preload --log-file - --timeout 120 --workers 2
     postDeployCommand: |
       python manage.py migrate --noinput
+    healthCheckPath: /health/
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: core.settings
