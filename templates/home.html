@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load product_tags %}
 
 {% block title %}PRI - Plataforma de Reprogramación Inteligente de Entregas{% endblock %}
 
@@ -108,8 +109,9 @@
         {% for product in featured_products %}
         <div class="product-card">
             <div class="product-image-container">
-                {% if product.image %}
-                    <img class="product-image" src="{{ product.image.url }}" alt="{{ product.name }}">
+                {% product_image product as img_url %}
+                {% if img_url %}
+                    <img class="product-image" src="{{ img_url }}" alt="{{ product.name }}">
                 {% else %}
                     <div class="product-image" style="background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
                         <i class="bi bi-image"></i>

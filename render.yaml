@@ -11,6 +11,7 @@ services:
     startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --preload --log-file - --timeout 120 --workers 2
     postDeployCommand: |
       python manage.py migrate --noinput
+      python manage.py seed_store
     healthCheckPath: /health/
     envVars:
       - key: DJANGO_SETTINGS_MODULE

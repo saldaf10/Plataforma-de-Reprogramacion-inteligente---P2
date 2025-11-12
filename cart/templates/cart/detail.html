@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load product_tags %}
 {% block title %}Carrito de Compras - PRI{% endblock %}
 
 {% block content %}
@@ -19,8 +20,9 @@
           <div class="row align-items-center g-3">
             <!-- Imagen del producto -->
             <div class="col-md-2">
-              {% if it.product.image %}
-                <img src="{{ it.product.image.url }}" alt="{{ it.product.name }}" style="width: 100%; border-radius: var(--radius-md); aspect-ratio: 1; object-fit: cover;">
+              {% product_image it.product as img_url %}
+              {% if img_url %}
+                <img src="{{ img_url }}" alt="{{ it.product.name }}" style="width: 100%; border-radius: var(--radius-md); aspect-ratio: 1; object-fit: cover;">
               {% else %}
                 <div style="width: 100%; aspect-ratio: 1; background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: white;">
                   <i class="bi bi-image" style="font-size: 2rem;"></i>

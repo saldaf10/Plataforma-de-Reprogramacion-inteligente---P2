@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load product_tags %}
 {% block title %}{{ product.name }} - PRI{% endblock %}
 
 {% block content %}
@@ -15,8 +16,9 @@
   <!-- Imagen del producto -->
   <div class="col-lg-6">
     <div class="modern-card" style="overflow: hidden;">
-      {% if product.image %}
-        <img class="w-100" src="{{ product.image.url }}" alt="{{ product.name }}" style="object-fit: cover; max-height: 500px;">
+      {% product_image product as img_url %}
+      {% if img_url %}
+        <img class="w-100" src="{{ img_url }}" alt="{{ product.name }}" style="object-fit: cover; max-height: 500px;">
       {% else %}
         <div style="background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); height: 500px; display: flex; align-items: center; justify-content: center; color: white; font-size: 5rem;">
           <i class="bi bi-image"></i>
@@ -139,8 +141,9 @@
     {% for p in similar %}
     <div class="product-card">
       <div class="product-image-container">
-        {% if p.image %}
-          <img class="product-image" src="{{ p.image.url }}" alt="{{ p.name }}">
+        {% product_image p as img_url %}
+        {% if img_url %}
+          <img class="product-image" src="{{ img_url }}" alt="{{ p.name }}">
         {% else %}
           <div class="product-image" style="background: linear-gradient(135deg, #01c9ff 0%, #6366f1 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem;">
             <i class="bi bi-image"></i>
